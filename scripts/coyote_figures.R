@@ -18,15 +18,88 @@ library(ggpubr)
 library(grid)
 library(sp)
 library(raster)
+library(lme4)
+
+# set ggplot theme
+theme_set(theme_bw())
 
 # 2) data import ----------------------------------------------------------
 
-# read in processed data (created using coyote_analysis script)
+# read in processed data (created using coyote_formatting script)
+coyote_data <-
+  
+  read_csv('data/processed/coyote_data.csv') %>% 
+  
+  # add wide_linear column combining all wide linear features (determined using coyote_analysis script)
+  mutate(wide_linear = 
+           roads + 
+           seismic_lines +
+           transmission_lines)
+
+# run top model (determined using coyote_analysis script)
+global <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(nat_land) +
+      scale(wide_linear) +
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+
+# 3) calculating odds ratios --------------------------------------------------
+
+# first: calculate odds ratios
 global_odds <-
   
-  read_csv('data/processed/global_odds.csv')
+  # calculate confidence intervals
+  confint(global,
+          parm = 'beta_') %>% 
+  
+  # extract fixed effects coefficients
+  cbind(est = fixef(global)) %>% 
+  
+  # exponentiate to get odds ratios
+  exp() %>% 
+  
+  as.data.frame() %>% 
+  
+  # name first column and preserve it for next step
+  rownames_to_column(var = 'term') %>% 
+  
+  # convert to tibble for easier manipulation
+  as.tibble() %>%
+  
+  # remove intercept information
+  filter(term != '(Intercept)') %>% 
+  
+  # rename confidence %s
+  rename(lower = '2.5 %',
+         upper = '97.5 %') %>% 
+  
+  # add a column with cleaned-up plot label names (so we don't have to do this in ggplot2)
+  add_column(label = c('natural landcover',
+                       'wide linear features',
+                       'white-tailed deer',
+                       'moose',
+                       'red squirrel',
+                       'snowshoe hare',
+                       'grey wolf',
+                       'lynx',
+                       'fisher')) %>% 
+  
+  # change label column into a factor for plotting
+  mutate(label = as.factor(label))odds ratio plot
 
-# 3) odds ratio plot ------------------------------------------------------
+
+# 4) odds ratios plot -----------------------------------------------------
 
 # plot odds ratios for global model
 odds_plot <-
@@ -68,21 +141,69 @@ odds_plot <-
   # flip x and y axis 
   coord_flip() +
   
-  # specify theme
-  theme_bw() +
-  
   # specify theme elements
   theme(panel.grid = element_blank(),
         axis.title.y = element_blank())
 
-# 4) export odds ratio plot -----------------------------------------------
+# 5) export odds ratio plot -----------------------------------------------
 
 # save odds_plot to 'figures' folder
 ggsave('odds_ratio_plot.tiff',
        odds_plot,
        path = 'figures')
 
-# 5) plot predicted probabilities -----------------------------------------
+# 6) determining predicted probabilities -----------------------------------------
+
+predicted probabilities given covariates of interest
+
+
+
+
+
+wide_predictions <- ggpredict(global, 
+                              terms = c("wide_linear [all]")   
+                              type = "fe")  # Use type "re" to include fixed effects
+
+
+
+
+
+# plot 
+
+ggplot(wide_predictions, aes(x = x,
+                             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.8)
+
+
+
+
+# TBD - random effects ggpredict ------------------------------------------------
+
+test_wide_predictions <- ggpredict(global, 
+                                   terms = c('wide_linear [all]',
+                                             'array'),  # Include both nat_land and array
+                                   type = "random")  # Use type "re" to include random effects
+
+
+
+
+
+# plot 
+
+ggplot(test_wide_predictions, aes(x = x,
+                                  y = predicted)) +
+  
+  geom_line(aes(color = group)) +
+  
+  geom_ribbon(aes(fill = group,
+                  ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.1)
 
 
 
@@ -92,9 +213,7 @@ ggsave('odds_ratio_plot.tiff',
 
 
 
-
-
-# 6) mapping set-up ----------------------------------------------------------
+# 7) mapping set-up ----------------------------------------------------------
 
 # A) read in LU polygons where CTs were deployed
 
@@ -199,20 +318,6 @@ cities <-
   st_transform(crs = 26912) %>% 
   
   filter(name == 'Fort McMurray')
-
-# 7) map of Alberta in Canada ---------------------------------------------
-
-ab_can <-
-  
-  tm_shape(provs) +
-  tm_fill(col = 'grey20') +
-  
-  tm_shape(ab_boundary) +
-  tm_fill(col = 'grey70') +
-  
-  tm_layout(frame = FALSE,
-            bg.color = 'transparent')
-
 
 # 8) map of LUs and CT deployments in NE Alberta w study area inset -------
 
@@ -348,21 +453,6 @@ lus_cts <-
             legend.height = -0.5,
             legend.position = c('left', 'top'))
 
-tmap_save(lus_cts,
-          'figures/lus_cts.png',
-          width = 100,
-          height = 100,
-          units = 'mm',
-          bg = 'transparent')
-
-# save figure
-tmap_save(lus_cts,
-          'figures/lus_cts.png',
-          width = 100,
-          height = 100,
-          units = 'mm',
-          bg = 'transparent')
-
 # then: set NE Alberta bbox as an sf object
 ne_ab_bbox <- 
   ne_ab_bbox %>% 
@@ -381,12 +471,6 @@ ne_ab_can <-
              lwd = 2) +
   
   tm_layout(frame = FALSE)
-
-tmap_save(ne_ab_can,
-          'figures/ne_ab_can.png',
-          width = 183,
-          height = 100,
-          units = 'mm')
 
 # then: overlay maps (in Canva because I'm a cheater)
 
