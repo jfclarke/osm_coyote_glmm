@@ -302,8 +302,7 @@ roads <-
   
   st_transform(crs = 26912) %>% 
   
-  crop_shape(bbox1,
-             polygon = TRUE)
+  st_union()
 
 # H) read in cities layer
 # from ACME NetDrive
@@ -383,16 +382,16 @@ lus_cts <-
   
   # layer roads and cities on top
   tm_shape(roads) +
-  tm_lines(col = 'grey30',
+  tm_lines(col = 'grey40',
            lwd = 0.5) +
   
   tm_shape(cities) + 
-  tm_dots(col = 'grey30',
-          size = 0.15,
+  tm_dots(col = 'grey40',
+          size = 0.3,
           shape = 15) +
   tm_text('name',
-          size = 0.5,
-          just = c(-0.1,-0.1)) +
+          size = 0.7,
+          just = c(-0.11,-0.11)) +
   
   # add points for CT deployment locations in LU1
   tm_shape(cts_2022 %>% 
@@ -436,29 +435,37 @@ lus_cts <-
   tm_dots(col = '#005AB5',
           size = 0.02) +
   
+  # add scale bar
   tm_scale_bar(position = c('left', 'BOTTOM'),
                text.size = 0.7,
                width = 0.2) +
   
-  tm_add_legend(type = 'symbol',
-                col = c('grey95', '#DC3220', '#005AB5'),
-                shape = c(15, 16, 16),
-                size = c(0.5, 0.22, 0.22),
-                labels = c('landscape units', '2021-2022 deployments', '2022-2023 deployments')) +
+  # add legend
+  # tm_add_legend(type = 'symbol',
+  #               col = c('grey95', '#DC3220', '#005AB5'),
+  #               shape = c(15, 16, 16),
+  #               size = c(0.5, 0.22, 0.22),
+  #               labels = c('landscape units', '2021-2022 deployments', '2022-2023 deployments')) +
   
+  # specify layout elements
   tm_layout(frame = FALSE,
-            bg.color = 'transparent',
-            legend.text.size = 0.8,
-            legend.width = 0.7,
-            legend.height = -0.5,
-            legend.position = c('left', 'top'))
+            bg.color = 'transparent')
+            # legend.bg.color = 'grey70',
+            # legend.frame = 'black',
+            # legend.frame.lwd = 0.7,
+            # legend.text.size = 0.8,
+            # legend.width = 0.6,
+            # legend.height = -0.16,
+            # legend.position = c('left', 'top'))
 
 # then: set NE Alberta bbox as an sf object
+
+### next: set NE Alberta bbox as an sf object
 ne_ab_bbox <- 
   ne_ab_bbox %>% 
   st_as_sfc()
 
-# then: overlay map of Canada with Alberta highlighted with box of NE Alberta
+### then: overlay map of Alberta within Canada, with box around NE Alberta
 ne_ab_can <-
   tm_shape(provs) +
   tm_fill(col = 'grey20') +
@@ -468,12 +475,36 @@ ne_ab_can <-
   
   tm_shape(ne_ab_bbox) +
   tm_borders(col = 'black',
-             lwd = 2) +
+             lwd = 1) +
   
-  tm_layout(frame = FALSE)
+  tm_layout(frame.lwd = 2)
 
-# then: overlay maps (in Canva because I'm a cheater)
+### next: overlay maps
 
+# convert tmap objects into elements that cowplot can recognize
+lus_cts_grob <- tmap_grob(lus_cts)
+ne_ab_can_grob <- tmap_grob(ne_ab_can)
+
+# now: inset using cowplot
+inset_map <-
+  
+  ggdraw(lus_cts_grob) + # add first layer = study area map
+  draw_plot(ne_ab_can_grob, # inset map of Canada and specify position
+            x = 0.25,
+            y = 0.71,
+            width = 0.25,
+            height = 0.25) +
+  theme(panel.background =
+          element_rect(
+            fill = 'transparent'))
+
+ggsave('study_area_map.png',
+       inset_map,
+       path = 'figures',
+       width = 183,
+       height = 100,
+       units = 'mm',
+       bg = 'transparent')
 
 
 

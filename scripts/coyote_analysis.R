@@ -13,6 +13,7 @@ library(lme4)
 library(MuMIn)
 library(purrr)
 library(broom.mixed)
+library(ggeffects)
 
 # 2) data import ----------------------------------------------------------
 
@@ -374,3 +375,89 @@ h_sel <-
 
 # result: global model best supported by delta > 2.00
 #         global_int model second-best supported
+<<<<<<< Updated upstream
+=======
+
+# 7) odds ratios --------------------------------------------------
+
+# first: calculate odds ratios
+global_odds <-
+  
+  # calculate confidence intervals
+  confint(global,
+          parm = 'beta_') %>% 
+  
+  # extract fixed effects coefficients
+  cbind(est = fixef(global)) %>% 
+  
+  # exponentiate to get odds ratios
+  exp() %>% 
+  
+  as.data.frame() %>% 
+  
+  # name first column and preserve it for next step
+  rownames_to_column(var = 'term') %>% 
+  
+  # convert to tibble for easier manipulation
+  as.tibble() %>%
+  
+  # remove intercept information
+  filter(term != '(Intercept)') %>% 
+  
+  # rename confidence %s
+  rename(lower = '2.5 %',
+         upper = '97.5 %') %>% 
+  
+  # add a column with cleaned-up plot label names (so we don't have to do this in ggplot2)
+  add_column(label = c('natural landcover',
+                       'wide linear features',
+                       'white-tailed deer',
+                       'moose',
+                       'red squirrel',
+                       'snowshoe hare',
+                       'grey wolf',
+                       'lynx',
+                       'fisher')) %>% 
+  
+  # change label column into a factor for plotting
+  mutate(label = as.factor(label))
+
+# 8) save odds ratio tibble -----------------------------------------------
+
+# save global_odds as .csv in 'processed' data folder
+write_csv(global_odds,
+          'data/processed/global_odds.csv')
+
+# 9) predicted probabilities ----------------------------------------------
+
+# create new data frame for natural landcover
+pp_nat_land <-
+  
+  expand.grid(nat_land = 
+                seq(min(coyote_data$nat_land),
+                    max(coyote_data$nat_land),
+                    length.out = 1000),
+              wide_linear = mean(coyote_data$wide_linear),
+              moose = mean(coyote_data$moose),
+              red_squirrel = mean(coyote_data$red_squirrel),
+              snowshoe_hare = mean(coyote_data$snowshoe_hare),
+              white_tailed_deer = mean(coyote_data$white_tailed_deer),
+              fisher = mean(coyote_data$fisher),
+              grey_wolf = mean(coyote_data$grey_wolf),
+              lynx = mean(coyote_data$grey_wolf),
+              
+              array = )
+
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> Stashed changes
