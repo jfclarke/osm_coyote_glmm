@@ -1,0 +1,207 @@
+# FORMATTING DATA FOR COYOTE MANUSCRIPT
+# author: Jamie Clarke
+# adapted from code written by Larissa Bron
+
+# last updated: November 15 2024
+
+# 1) set-up ---------------------------------------------------------------
+
+# load in relevant packages
+library(tidyverse)
+library(PerformanceAnalytics)
+library(purrr)
+
+# 2) data import  ----------------------------------------------------------
+
+# load in percent cover of human/vegetation features
+landcover <- 
+
+  read_csv('data/raw/OSM_covariates_grouped_2021_2022.csv') %>% 
+  
+  # select relevant features
+  select(array,
+         site,
+         buff_dist,
+         pipeline,
+         roads,
+         seismic_lines,
+         seismic_lines_3D,
+         trails,
+         transmission_lines,
+         lc_grassland,
+         lc_coniferous,
+         lc_broadleaf,
+         lc_mixed,
+         lc_shrub) %>%
+  
+  # combine natural landcover types into nat_land (i.e., natural landcover)
+  mutate(nat_land = 
+           lc_grassland +
+           lc_coniferous +
+           lc_broadleaf +
+           lc_mixed +
+           lc_shrub)
+
+# load in proportional detections of coyotes
+coyote_det <-
+  
+  read_csv('data/raw/OSM_proportional_detections_merged_2021_2022.csv') %>% 
+  
+  # rename coyote presence and absence for clarity
+  rename(coyote_pres = coyote, # new variable name = coyote_pres
+         coyote_abs = absent_coyote) %>% # new variable name = coyote_abs
+  
+  # select site (LU #), coyote_pres and coyote_abs
+  select(site,
+         coyote_pres,
+         coyote_abs) 
+
+# load in total detections of other mammal species
+# join 2021-2022 + 2022-2023 datasets using purr
+mammal_det <- 
+   
+  # provide file path
+  file.path('data/raw',
+            c('OSM_total_detections_2021.csv',
+              'OSM_2022_total_detections.csv')) %>% 
+  
+            # use purr map_dfr to read in files and merge them
+            map_dfr(
+              ~.x %>% 
+                read_csv(.,
+                         col_types = cols(site = col_factor(),
+                                          .default = col_integer()))) %>% 
+  # reformat column names
+  set_names(
+    names(.) %>% 
+      tolower() %>% # change letters to lower case
+      gsub(" ", "_", .) %>% # substitute spaces for underscores
+      gsub("-", "_", .)) %>% # substitute dashes for underscores
+  
+  # rename coyote column as coyote_tot to easily differentiate between proportional coyote detections
+  rename(coyote_tot = coyote) %>% 
+  
+  # select relevant mammal species
+  select(site,
+         coyote_tot,
+         fisher,
+         snowshoe_hare,
+         white_tailed_deer,
+         cougar,
+         lynx,
+         red_squirrel,
+         moose,
+         grey_wolf,
+         caribou)
+
+# now: join together above dataframes into coyote_data master dataframe and clean it up
+coyote_data <-
+  
+landcover %>% 
+  
+  left_join(coyote_det,
+            by = 'site') %>% 
+  
+  left_join(mammal_det,
+            by = 'site') %>% 
+  
+  # filter this dataset for buffer distance of 4750 m
+  # 4750 m was the top-performing buffer scale for coyotes when considering anthropogenic features - as described in other work on the OSM project
+  filter(buff_dist == 4750) %>% 
+  
+  # remove columns not needed
+  select(-c(buff_dist,
+            lc_grassland,
+            lc_coniferous,
+            lc_broadleaf,
+            lc_mixed,
+            lc_shrub))
+  
+# remove old dataframes from the environment to keep things organized
+rm(coyote_det,
+   landcover,
+   mammal_det)
+
+# 3) data exploration -----------------------------------------------------
+
+# check histograms for each covariate of interest
+# looking for very left-skewed, zero-inflated plots that indicate little presence on the lansdscape (for modelling)
+hist(coyote_data$nat_land)
+hist(coyote_data$pipeline)
+hist(coyote_data$roads)
+hist(coyote_data$seismic_lines)
+hist(coyote_data$seismic_lines_3D)
+hist(coyote_data$trails)
+hist(coyote_data$transmission_lines)
+hist(coyote_data$fisher)
+hist(coyote_data$snowshoe_hare)
+hist(coyote_data$white_tailed_deer)
+hist(coyote_data$cougar) # too few detections
+hist(coyote_data$lynx)
+hist(coyote_data$red_squirrel)
+hist(coyote_data$moose)
+hist(coyote_data$grey_wolf)
+hist(coyote_data$caribou) # too few detections
+
+# remove cougars and caribou from the dataframe
+coyote_data <-
+  
+  coyote_data %>% 
+  
+  select(-c(cougar,
+            caribou))
+
+# 4) save project dataframe -------------------------------------------------------
+
+# save coyote_data as .csv in 'processed' data folder
+write_csv(coyote_data,
+          'data/processed/coyote_data.csv')
+
+# 5) testing for correlation ----------------------------------------------
+
+# first: make a new variable made up of all the covariates to consider
+coyote_cor <-
+  
+  coyote_data %>%
+  
+  select(pipeline,
+         roads,
+         seismic_lines,
+         seismic_lines_3D,
+         trails,
+         transmission_lines,
+         nat_land,
+         fisher,
+         snowshoe_hare,
+         white_tailed_deer,
+         lynx,
+         red_squirrel,
+         moose,
+         grey_wolf)
+
+# side note: the text side in the correlation plots tends to be really tiny
+# to change that, run the following line of code
+# in the pop-up window, on line 17, change 'cex' to 5 (or whatever you want)
+trace("chart.Correlation",
+      edit = T)
+
+# graph a Pearson's correlation matrix
+chart.Correlation(coyote_cor,
+                  histogram = TRUE,
+                  method = 'pearson')
+
+# results: transmission lines and pipelines = 0.64
+#          roads and pipelines = 0.60
+
+# graph a Spearman's correlation matrix
+chart.Correlation(coyote_cor,
+                  histogram = TRUE,
+                  method = 'spearman')
+
+# results: roads and pipelines = 0.70
+#          transmission lines and pipelines = 0.69
+#          3D seismic lines and pipelines: 0.69
+
+# 6) data analysis ----------------------------------------------------------------------
+
+# move onto coyote_analysis script :-)
