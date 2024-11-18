@@ -427,30 +427,56 @@ write_csv(global_odds,
 
 # 9) predicted probabilities ----------------------------------------------
 
-# create new data frame for each variable
 
-# natural landcover
-pp_nat_land <-
+
+
+
+wide_predictions <- ggpredict(global, 
+                              terms = "wide_linear [all]",  # Include both nat_land 
+                              type = "fe")  # Use type "re" to include random effects
+
+
+
+
+
+# plot 
+
+ggplot(wide_predictions, aes(x = x,
+                             y = predicted)) +
   
-  expand.grid(nat_land = 
-                seq(min(coyote_data$nat_land),
-                    max(coyote_data$nat_land),
-                    length.out = 1000),
-              wide_linear = mean(coyote_data$wide_linear),
-              moose = mean(coyote_data$moose),
-              red_squirrel = mean(coyote_data$red_squirrel),
-              snowshoe_hare = mean(coyote_data$snowshoe_hare),
-              white_tailed_deer = mean(coyote_data$white_tailed_deer),
-              fisher = mean(coyote_data$fisher),
-              grey_wolf = mean(coyote_data$grey_wolf),
-              lynx = mean(coyote_data$grey_wolf))
-
-pp_nat_land$pred <-
+  geom_line(aes()) +
   
-  predict(global,
-          type = 'response',
-          newdata = pp_nat_land)
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.8)
 
+
+
+
+# random effects ggpredict ------------------------------------------------
+
+
+
+test_wide_predictions <- ggpredict(global, 
+                              terms = c('wide_linear [all]',
+                                        'array'),  # Include both nat_land and array
+                              type = "random")  # Use type "re" to include random effects
+
+
+
+
+
+# plot 
+
+ggplot(test_wide_predictions, aes(x = x,
+                             y = predicted)) +
+  
+  geom_line(aes(color = group)) +
+  
+  geom_ribbon(aes(fill = group,
+                  ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.1)
 
 
 
