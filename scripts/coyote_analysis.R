@@ -2,7 +2,7 @@
 # author: Jamie Clarke
 # adapted from code written by Larissa Bron and Marissa Dyck
 
-# last updated: November 15 2024
+# last updated: November 18 2024
 
 # 1) set-up ---------------------------------------------------------------
 
@@ -13,7 +13,6 @@ library(lme4)
 library(MuMIn)
 library(purrr)
 library(broom.mixed)
-library(ggeffects)
 
 # 2) data import ----------------------------------------------------------
 

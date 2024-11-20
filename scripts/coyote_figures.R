@@ -1,7 +1,7 @@
 # PLOTTING/MAPPING FOR COYOTE MANUSCRIPT
 # author: Jamie Clarke
 
-# last updated: November 15 2024
+# last updated: November 19 2024
 
 # 1) set-up ---------------------------------------------------------------
 
@@ -17,11 +17,13 @@ library(tmaptools)
 library(ggpubr)
 library(grid)
 library(sp)
-library(raster)
 library(lme4)
+library(ggeffects)
+library(scales)
+library(rphylopic)
 
 # set ggplot theme
-theme_set(theme_bw())
+theme_set(theme_classic())
 
 # 2) data import ----------------------------------------------------------
 
@@ -96,8 +98,7 @@ global_odds <-
                        'fisher')) %>% 
   
   # change label column into a factor for plotting
-  mutate(label = as.factor(label))odds ratio plot
-
+  mutate(label = as.factor(label))
 
 # 4) odds ratios plot -----------------------------------------------------
 
@@ -154,43 +155,377 @@ ggsave('odds_ratio_plot.tiff',
 
 # 6) determining predicted probabilities -----------------------------------------
 
-predicted probabilities given covariates of interest
+# predicted probabilities given each covariates of interest
 
+pp_wide_linear <-
+  
+  ggpredict(global,
+            terms = 'wide_linear [all]',
+            type = 'fe') # fe = fixed effects
 
+pp_moose <-
+  
+  ggpredict(global,
+            terms = 'moose [all]',
+            type = 'fe')
 
+pp_red_squirrel <-
+  
+  ggpredict(global,
+            terms = 'red_squirrel [all]',
+            type = 'fe')
 
+pp_snowshoe_hare <-
+  
+  ggpredict(global,
+            terms = 'snowshoe_hare [all]',
+            type = 'fe')
 
-wide_predictions <- ggpredict(global, 
-                              terms = c("wide_linear [all]")   
-                              type = "fe")  # Use type "re" to include fixed effects
+pp_white_tailed_deer <-
+  
+  ggpredict(global,
+            terms = 'white_tailed_deer [all]',
+            type = 'fe')
 
+pp_fisher <-
+  
+  ggpredict(global,
+            terms = 'fisher [all]',
+            type = 'fe')
 
+pp_grey_wolf <-
+  
+  ggpredict(global,
+            terms = 'grey_wolf [all]',
+            type = 'fe')
 
+pp_lynx <-
+  
+  ggpredict(global,
+            terms = 'lynx [all]',
+            type = 'fe')
 
+# 7) predicted probabilities plots -------------------------------------
 
-# plot 
+# NOTE: to find the PhyloPic uuid (= image ID), type the following code in the console:
+# pick_phylopic(name = 'species name', n = #)
+# where 'species name' is the scientific or common name of the species of interest and n = # is the number of options you want to peruse
+# when you find the image you want: select it and find the uuid in the console output
 
-ggplot(wide_predictions, aes(x = x,
-                             y = predicted)) +
+# plot predicted probability of coyote occurence given proportion of wide linear features
+plot_wide_linear <- 
+  
+  ggplot(pp_wide_linear,
+         aes(x = x,
+             y = predicted)) +
   
   geom_line(aes()) +
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.8)
+              alpha = 0.4) +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 0.65, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('proportion of wide LFs') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35))
+
+# plot predicted probability of coyote occurrence given total independent moose detections
+plot_moose <-
+  
+  ggplot(pp_moose,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total moose detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add moose silhouette
+  add_phylopic(uuid = '74eab34a-498c-4614-aece-f02361874f79',
+               x = 10,
+               y = 0.55,
+               height = 0.2)
+
+# plot predicted probability of coyote occurrence given total independent red squirrel detections
+plot_red_squirrel <-
+  
+  ggplot(pp_red_squirrel,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(limits = c(0, 150),
+                     breaks = seq(0, 150, by = 50),
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total squirrel detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add squirrel silhouette
+  add_phylopic(uuid = 'dad08fea-5263-4f57-a37b-c27cbe0eb9a5',
+               x = 30,
+               y = 0.55,
+               height = 0.15)
+
+# plot predicted probability of coyote occurrence given total independent snowshoe hare detections
+plot_snowshoe_hare <-
+  
+  ggplot(pp_snowshoe_hare,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(expand = c(0,0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total hare detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add hare silhouette
+  add_phylopic(uuid = '44f9db61-88e2-4a44-82f5-57dea9b3798d',
+               x = 50,
+               y = 0.55,
+               height = 0.2)
+
+# plot predicted probability of coyote occurrence given total independent white-tailed deer detections
+plot_white_tailed_deer <-
+  
+  ggplot(pp_white_tailed_deer,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(limits = c(0, 130),
+                     breaks = seq(0, 130, by = 30),
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total deer detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add deer silhouette
+  add_phylopic(uuid = '56f6fdb2-15d0-43b5-b13f-714f2cb0f5d0',
+               x = 30,
+               y = 0.55,
+               height = 0.25)
+
+# plot predicted probability of coyote occurrence given total independent fisher detections
+plot_fisher <-
+  
+  ggplot(pp_fisher,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(limits = c(0, 12.5),
+                     breaks = seq(0, 12.5, by = 3),
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total fisher detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add fisher silhouette
+  add_phylopic(uuid = '735066c6-2f3e-4f97-acb1-06f55ae075c9',
+               x = 3.5,
+               y = 0.55,
+               height = 0.12)
+
+# plot predicted probability of coyote occurrence given total independent grey wolf detections
+plot_grey_wolf <-
+  
+  ggplot(pp_grey_wolf,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(limits = c(0, 13),
+                     breaks = seq(0, 13, by = 3),
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total wolf detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add wolf silhouette
+  add_phylopic(uuid = '8cad2b22-30d3-4cbd-86a3-a6d2d004b201',
+               x = 4,
+               y = 0.55,
+               height = 0.17)
+
+# plot predicted probability of coyote occurrence given total independent lynx detections
+plot_lynx <-
+  
+  ggplot(pp_lynx,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              alpha = 0.4) +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 1, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('total lynx detections') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35)) +
+  
+  # add lynx silhouette
+  add_phylopic(uuid = '27a2173a-5903-46fc-83c5-29ed7f421046',
+               x = 6,
+               y = 0.55,
+               height = 0.17)
+
+# 8) predicted probabilities plot panel -----------------------------------
+
+# combine predicted probabilities plots together in one figure
+pp_plot <-
+  
+  ggarrange(plot_wide_linear,
+            plot_moose,
+            plot_red_squirrel,
+            plot_snowshoe_hare,
+            plot_white_tailed_deer,
+            plot_fisher,
+            plot_grey_wolf,
+            plot_lynx,
+            labels = 'auto',
+            label.x = 0.88,
+            font.label = list(size = 12),
+            ncol = 4,
+            nrow = 2) %>% 
+  
+  annotate_figure(left = text_grob('predicted coyote occurence',
+                                   rot = 90,
+                                   vjust = 0.5))
 
 
+# 9) export predicted probabilities figure ---------------------------------
 
+ggsave('predicted_probabilities_panel.png',
+       pp_plot,
+       path = 'figures',
+       width = 200,
+       height = 100,
+       units = 'mm',
+       bg = 'white')
 
-# TBD - random effects ggpredict ------------------------------------------------
+# TBD - predicted probabilities w/ random effects ------------------------------------------------
 
 test_wide_predictions <- ggpredict(global, 
                                    terms = c('wide_linear [all]',
                                              'array'),  # Include both nat_land and array
                                    type = "random")  # Use type "re" to include random effects
-
-
-
 
 
 # plot 
@@ -205,15 +540,7 @@ ggplot(test_wide_predictions, aes(x = x,
                   ymax = conf.high),
               alpha = 0.1)
 
-
-
-
-
-
-
-
-
-# 7) mapping set-up ----------------------------------------------------------
+# 10) mapping set-up ----------------------------------------------------------
 
 # A) read in LU polygons where CTs were deployed
 
@@ -318,7 +645,7 @@ cities <-
   
   filter(name == 'Fort McMurray')
 
-# 8) map of LUs and CT deployments in NE Alberta w study area inset -------
+# 11) map of study area -------
 
 ### first: extend bounding box so map features (e.g., scale bar) don't overlap with map itself
 bbox1 <-  st_bbox(ne_ab_bbox)
@@ -498,6 +825,8 @@ inset_map <-
           element_rect(
             fill = 'transparent'))
 
+# 12) export study area map with inset ---------------------------------------------------------------------
+
 ggsave('study_area_map.png',
        inset_map,
        path = 'figures',
@@ -505,8 +834,3 @@ ggsave('study_area_map.png',
        height = 100,
        units = 'mm',
        bg = 'transparent')
-
-
-
-
-
