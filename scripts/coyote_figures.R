@@ -21,6 +21,7 @@ library(lme4)
 library(ggeffects)
 library(scales)
 library(rphylopic)
+library(MuMIn)
 
 # set ggplot theme
 theme_set(theme_classic())
@@ -307,8 +308,8 @@ plot_red_squirrel <-
   # add squirrel silhouette
   add_phylopic(uuid = 'dad08fea-5263-4f57-a37b-c27cbe0eb9a5',
                x = 30,
-               y = 0.55,
-               height = 0.15)
+               y = 0.54,
+               height = 0.16)
 
 # plot predicted probability of coyote occurrence given total independent snowshoe hare detections
 plot_snowshoe_hare <-
@@ -375,10 +376,10 @@ plot_white_tailed_deer <-
         axis.title.y.left = element_text(size = 35)) +
   
   # add deer silhouette
-  add_phylopic(uuid = '56f6fdb2-15d0-43b5-b13f-714f2cb0f5d0',
-               x = 30,
-               y = 0.55,
-               height = 0.25)
+  add_phylopic(uuid = '4584be20-4514-4673-a3e8-97e2a6a10e57',
+               x = 29,
+               y = 0.53,
+               height = 0.24)
 
 # plot predicted probability of coyote occurrence given total independent fisher detections
 plot_fisher <-
@@ -448,7 +449,7 @@ plot_grey_wolf <-
   
   # add wolf silhouette
   add_phylopic(uuid = '8cad2b22-30d3-4cbd-86a3-a6d2d004b201',
-               x = 4,
+               x = 3.5,
                y = 0.55,
                height = 0.17)
 
@@ -482,7 +483,7 @@ plot_lynx <-
   
   # add lynx silhouette
   add_phylopic(uuid = '27a2173a-5903-46fc-83c5-29ed7f421046',
-               x = 6,
+               x = 5.9,
                y = 0.55,
                height = 0.17)
 
@@ -520,27 +521,71 @@ ggsave('predicted_probabilities_panel.png',
        units = 'mm',
        bg = 'white')
 
-# TBD - predicted probabilities w/ random effects ------------------------------------------------
+# 10) predicted probabilities w/ random effects ------------------------------------------------
 
-test_wide_predictions <- ggpredict(global, 
-                                   terms = c('wide_linear [all]',
-                                             'array'),  # Include both nat_land and array
-                                   type = "random")  # Use type "re" to include random effects
+# determining and plotting an example graph of predicted probabilities with random effects
+
+# choosing wide linear features as the fixed effect
+re_pp_wide_linear <-
+  
+  ggpredict(global, 
+            terms = c('wide_linear [all]', # fixed effect
+                      'array'), # random effect
+            type = "random")
 
 
-# plot 
-
-ggplot(test_wide_predictions, aes(x = x,
-                                  y = predicted)) +
+# plot predicted probability of coyote occurrence given total independent lynx detections and random effects of array
+re_plot <-
+  
+  ggplot(re_pp_wide_linear,
+         aes(x = x,
+             y = predicted)) +
   
   geom_line(aes(color = group)) +
+  
+  # using colourblind-friendly Tol colour scheme
+  # more info at https://personal.sron.nl/~pault/
+  scale_fill_manual(values = c('#4477AA',
+                               '#66CCEE',
+                               '#228833',
+                               '#CCBB44',
+                               '#EE6677',
+                               '#AA3377')) +
   
   geom_ribbon(aes(fill = group,
                   ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.1)
+              alpha = 0.1) +
+  
+  scale_color_manual(values = c('#4477AA',
+                                '#66CCEE',
+                                '#228833',
+                                '#CCBB44',
+                                '#EE6677',
+                                '#AA3377')) +
+  
+  labs(color = NULL,
+       fill = NULL,
+       x = 'proportion of wide LFs',
+       y = 'predicted coyote occurence')
 
-# 10) mapping set-up ----------------------------------------------------------
+# save plot
+ggsave('re_predicted_probability.png',
+       re_plot,
+       path = 'figures',
+       width = 183,
+       height = 100,
+       units = 'mm')
+
+# 11) variance inflation factor ------------------------------------------
+
+# calculate variance inflation factors (VIFs)
+vif(global)
+
+# plot VIFs
+
+
+# 12) mapping set-up ----------------------------------------------------------
 
 # A) read in LU polygons where CTs were deployed
 
@@ -645,7 +690,7 @@ cities <-
   
   filter(name == 'Fort McMurray')
 
-# 11) map of study area -------
+# 13) map of study area -------
 
 ### first: extend bounding box so map features (e.g., scale bar) don't overlap with map itself
 bbox1 <-  st_bbox(ne_ab_bbox)
@@ -825,7 +870,7 @@ inset_map <-
           element_rect(
             fill = 'transparent'))
 
-# 12) export study area map with inset ---------------------------------------------------------------------
+# 14) export study area map with inset ---------------------------------------------------------------------
 
 ggsave('study_area_map.png',
        inset_map,
@@ -834,3 +879,4 @@ ggsave('study_area_map.png',
        height = 100,
        units = 'mm',
        bg = 'transparent')
+

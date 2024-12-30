@@ -1,19 +1,30 @@
-# FORMATTING DATA FOR COYOTE MANUSCRIPT
-# author: Jamie Clarke
-# adapted from code written by Larissa Bron
+---
+title: 'coyote_formatting script'
+author: "authors: Jamie Clarke, Marissa Dyck, Larissa Bron, Madison Carlson, Sophia Labiy, Zoe Penno, Hayley Webster, Jason T Fisher"
+date: "last updated: 27/12/2024"
+output: html_document
+---
 
-# last updated: November 15 2024
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-# 1) set-up ---------------------------------------------------------------
+## about
+This is walk-through on how to format data for *the coyote manuscript*. It was written by Jamie Clarke with help from Dr. Marissa Dyck and based on preliminary code by Larissa Bron. The data required to run the script is available on Jamie's GitHub at https://github.com/jfclarke/osm_coyote_glmm. Happy formatting :-)
 
-# load in relevant packages
+## 1) set-up
+
+#### start by loading in relevant packages:
+```{r packages, message=FALSE}
 library(tidyverse)
 library(PerformanceAnalytics)
 library(purrr)
+```
 
-# 2) data import  ----------------------------------------------------------
+## 2) data import
 
-# load in percent cover of human/vegetation features
+#### a) load in percent cover of human/vegetation features:
+```{r landcover, message=FALSE}
 landcover <- 
 
   read_csv('data/raw/OSM_covariates_grouped_2021_2022.csv') %>% 
@@ -41,8 +52,10 @@ landcover <-
            lc_broadleaf +
            lc_mixed +
            lc_shrub)
+```
 
-# load in proportional detections of coyotes
+#### b) load in proportional detections of coyotes:
+```{r coyote_det, message=FALSE}
 coyote_det <-
   
   read_csv('data/raw/OSM_proportional_detections_merged_2021_2022.csv') %>% 
@@ -54,10 +67,11 @@ coyote_det <-
   # select site (LU #), coyote_pres and coyote_abs
   select(site,
          coyote_pres,
-         coyote_abs) 
+         coyote_abs)
+```
 
-# load in total detections of other mammal species
-# join 2021-2022 + 2022-2023 datasets using purr
+#### c) load in total detections of other mammal species and join the 2021-2022 + 2022-2023 datasets using purr:
+```{r mammal_det, message=FALSE}
 mammal_det <- 
    
   # provide file path
@@ -93,8 +107,10 @@ mammal_det <-
          moose,
          grey_wolf,
          caribou)
+```
 
-# now: join together above dataframes into coyote_data master dataframe and clean it up
+#### d) join dataframes together into coyote_data master dataframe and clean it up:
+```{r coyote_data, message=FALSE}
 coyote_data <-
   
 landcover %>% 
@@ -116,16 +132,19 @@ landcover %>%
             lc_broadleaf,
             lc_mixed,
             lc_shrub))
-  
-# remove old dataframes from the environment to keep things organized
+```
+
+#### e) remove old dataframes from the environment to keep things organized:
+```{r rm, message=FALSE}
 rm(coyote_det,
    landcover,
    mammal_det)
+```
 
-# 3) data exploration -----------------------------------------------------
+## 3) data exploration
 
-# check histograms for each covariate of interest
-# looking for very left-skewed, zero-inflated plots that indicate little presence on the lansdscape (for modelling)
+#### a) check histograms for each covariate of interest - looking for very left-skewed, zero-inflated plots that indicate little presence on the lansdscape (for modelling):
+```{r hist}
 hist(coyote_data$nat_land)
 hist(coyote_data$pipeline)
 hist(coyote_data$roads)
@@ -136,30 +155,36 @@ hist(coyote_data$transmission_lines)
 hist(coyote_data$fisher)
 hist(coyote_data$snowshoe_hare)
 hist(coyote_data$white_tailed_deer)
-hist(coyote_data$cougar) # too few detections
+hist(coyote_data$cougar)
 hist(coyote_data$lynx)
 hist(coyote_data$red_squirrel)
 hist(coyote_data$moose)
 hist(coyote_data$grey_wolf)
-hist(coyote_data$caribou) # too few detections
+hist(coyote_data$caribou)
+```
 
-# remove cougars and caribou from the dataframe
+#### b) the plots above show us that there are too few detections of cougars and caribou to take further into analyses - so remove cougars and caribou from the dataframe:
+```{r rm_cougar_caribou, message=FALSE}
 coyote_data <-
   
   coyote_data %>% 
   
   select(-c(cougar,
             caribou))
+```
 
-# 4) save formatted project dataframe -------------------------------------------------------
+## 4) save formatted project dataframe
 
-# save coyote_data as .csv in 'processed' data folder
+#### save coyote_data as .csv in 'processed' data folder:
+```{r save_df, message=FALSE}
 write_csv(coyote_data,
           'data/processed/coyote_data.csv')
+```
 
-# 5) testing for correlation ----------------------------------------------
+## 5) test for correlation
 
-# first: make a new variable made up of all the covariates to consider
+#### a) make a new variable of all the covariates to consider:
+```{r coyote_cor, message=FALSE}
 coyote_cor <-
   
   coyote_data %>%
@@ -178,30 +203,34 @@ coyote_cor <-
          red_squirrel,
          moose,
          grey_wolf)
+```
 
-# side note: the text size in the correlation plots is really tiny
-# to change that, run the following line of code
-# in the pop-up window, on line 17, change 'cex' to 5 (or whatever you want)
+#### <span style="color: darkblue;">side note:</span> the text size in the correlation plots is really tiny...
+#### to change that, run the following line of code and, in the pop-up window, on line 17, change 'cex' to 5 (or whatever you want):
+```{r cex, eval=FALSE}
 trace("chart.Correlation",
       edit = T)
+```
 
-# graph a Pearson's correlation matrix
+#### b) graph a Pearson's correlation matrix:
+```{r pearson, warning=FALSE}
 chart.Correlation(coyote_cor,
                   histogram = TRUE,
                   method = 'pearson')
+```
+  
+results:  
+- transmission lines and pipelines = 0.64  
+- roads and pipelines = 0.60
 
-# results: transmission lines and pipelines = 0.64
-#          roads and pipelines = 0.60
-
-# graph a Spearman's correlation matrix
+#### c) graph a Spearman's correlation matrix:
+```{r spearman, warning=FALSE}
 chart.Correlation(coyote_cor,
                   histogram = TRUE,
                   method = 'spearman')
-
-# results: roads and pipelines = 0.70
-#          transmission lines and pipelines = 0.69
-#          3D seismic lines and pipelines: 0.69
-
-# 6) data analysis ----------------------------------------------------------------------
-
-# move onto coyote_analysis script :-)
+```
+  
+results:  
+- roads and pipelines = 0.70  
+- transmission lines and pipelines = 0.69  
+- 3D seismic lines and pipelines: 0.69

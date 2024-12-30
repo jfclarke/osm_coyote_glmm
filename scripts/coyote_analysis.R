@@ -13,6 +13,7 @@ library(lme4)
 library(MuMIn)
 library(purrr)
 library(broom.mixed)
+library(car)
 
 # 2) data import ----------------------------------------------------------
 
@@ -120,7 +121,7 @@ lf_sel <-
 #         global_lf model second-best supported, unveg_lf close third
 
 
-# 6) creating a wide linear feature variable ------------------------------
+# 5) creating a wide linear feature variable ------------------------------
 
 coyote_data <-
   
@@ -131,8 +132,7 @@ coyote_data <-
            seismic_lines +
            transmission_lines)
 
-
-# 5) hypothesis-testing model set -----------------------------------------
+# 6) hypothesis-testing model set -----------------------------------------
 
 # H1: global model (natural landcover, wide linear features, all mammals)
 global <-
@@ -350,7 +350,34 @@ comp_lc_int <-
     data = coyote_data,
     family = binomial)
 
-# 6) hypothesis-testing model selection -----------------------------------
+# 7) comparing fixed and random effect models ---------------------------------------------------------------------
+
+# testing  an example model (global) with a random effect for array against the same model without a random effect
+
+# H16: global model (natural landcover, wide linear features, all mammals) without random effect
+fe_global <-
+  
+  glm(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(nat_land) +
+      scale(wide_linear) +
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher),
+    data = coyote_data,
+    family = binomial)
+
+# run model selection
+model.sel(global,
+          fe_global)
+
+# result: random effects model best supported
+
+# 8) hypothesis-testing model selection -----------------------------------
 
 h_sel <-
   
@@ -374,89 +401,16 @@ h_sel <-
 
 # result: global model best supported by delta > 2.00
 #         global_int model second-best supported
-<<<<<<< Updated upstream
-=======
 
-# 7) odds ratios --------------------------------------------------
+# 9) detection data ----------------------------------------------
 
-# first: calculate odds ratios
-global_odds <-
+# sum the number of independent detections of each focal species
+coyote_data %>% 
   
-  # calculate confidence intervals
-  confint(global,
-          parm = 'beta_') %>% 
+  select_if(is.numeric) %>% # only consider numeric data
   
-  # extract fixed effects coefficients
-  cbind(est = fixef(global)) %>% 
-  
-  # exponentiate to get odds ratios
-  exp() %>% 
-  
-  as.data.frame() %>% 
-  
-  # name first column and preserve it for next step
-  rownames_to_column(var = 'term') %>% 
-  
-  # convert to tibble for easier manipulation
-  as.tibble() %>%
-  
-  # remove intercept information
-  filter(term != '(Intercept)') %>% 
-  
-  # rename confidence %s
-  rename(lower = '2.5 %',
-         upper = '97.5 %') %>% 
-  
-  # add a column with cleaned-up plot label names (so we don't have to do this in ggplot2)
-  add_column(label = c('natural landcover',
-                       'wide linear features',
-                       'white-tailed deer',
-                       'moose',
-                       'red squirrel',
-                       'snowshoe hare',
-                       'grey wolf',
-                       'lynx',
-                       'fisher')) %>% 
-  
-  # change label column into a factor for plotting
-  mutate(label = as.factor(label))
+  map_dbl(sum) # sum down each column
 
-# 8) save odds ratio tibble -----------------------------------------------
-
-# save global_odds as .csv in 'processed' data folder
-write_csv(global_odds,
-          'data/processed/global_odds.csv')
-
-# 9) predicted probabilities ----------------------------------------------
-
-# create new data frame for natural landcover
-pp_nat_land <-
-  
-  expand.grid(nat_land = 
-                seq(min(coyote_data$nat_land),
-                    max(coyote_data$nat_land),
-                    length.out = 1000),
-              wide_linear = mean(coyote_data$wide_linear),
-              moose = mean(coyote_data$moose),
-              red_squirrel = mean(coyote_data$red_squirrel),
-              snowshoe_hare = mean(coyote_data$snowshoe_hare),
-              white_tailed_deer = mean(coyote_data$white_tailed_deer),
-              fisher = mean(coyote_data$fisher),
-              grey_wolf = mean(coyote_data$grey_wolf),
-              lynx = mean(coyote_data$grey_wolf),
-              
-              array = )
-
-
-
-
-
-
-
-
-
-
-
-
-
->>>>>>> Stashed changes
+# count the number of camera stations where coyotes were detected
+sum(coyote_data$coyote_pres != 0,
+    na.rm = TRUE)
