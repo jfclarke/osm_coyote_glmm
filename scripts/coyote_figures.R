@@ -510,7 +510,6 @@ pp_plot <-
                                    rot = 90,
                                    vjust = 0.5))
 
-
 # 9) export predicted probabilities figure ---------------------------------
 
 ggsave('predicted_probabilities_panel.png',
@@ -532,7 +531,6 @@ re_pp_wide_linear <-
             terms = c('wide_linear [all]', # fixed effect
                       'array'), # random effect
             type = "random")
-
 
 # plot predicted probability of coyote occurrence given total independent lynx detections and random effects of array
 re_plot <-

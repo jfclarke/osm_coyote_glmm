@@ -9,22 +9,488 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## about
+This is walk-through on how to analyze data for *the coyote manuscript*. It was written by Jamie Clarke with help from Dr. Marissa Dyck. Before running this script, you will need to format the data using the coyote_formatting script. Happy analyzing :-)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## 1) set-up
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+#### start by loading in relevant packages:
+```{r packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(PerformanceAnalytics)
+library(lme4) 
+library(MuMIn)
+library(purrr)
+library(broom.mixed)
+library(car)
 ```
 
-## Including Plots
+## 2) data import
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+#### read in processed data (created using coyote_formatting script):
+```{r coyote_data, message=FALSE}
+coyote_data <-
+  
+  read_csv('data/processed/coyote_data.csv')
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## 3) linear feature model set
+
+#### <span style="color: darkblue;">step 1:</span> doing some exploratory analyses to decide which linear features to include in further models
+
+H0: null model
+```{r null, message=FALSE}
+null <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 1 +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H1: global model (all uncorrelated linear features)
+```{r global_lf, message=FALSE}
+global_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(roads) +
+      scale(seismic_lines) +
+      scale(seismic_lines_3D) +
+      scale(trails) +
+      scale(transmission_lines) + 
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+  
+H2: pipelines (on their own since hard to classify, variable widths + correlated with other features)
+```{r pipeline_lf, message=FALSE}
+pipeline_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(pipeline) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H3: narrow linear features (~5 m wide)
+```{r narrow_lf, message=FALSE}
+narrow_lf <-
+  
+  glmer(
+  cbind(coyote_pres, coyote_abs) ~ 
+    scale(seismic_lines_3D) +
+    scale(trails) +
+    (1 | array),
+  data = coyote_data,
+  family = binomial)
+```
+
+H4: wide linear features (>5 m wide)
+```{r wide_lf, message=FALSE}
+wide_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(roads) +
+      scale(seismic_lines) +
+      scale(transmission_lines) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H5: vegetated linear features (not paved/graveled)
+```{r veg_lf, message=FALSE}
+veg_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(seismic_lines) +
+      scale(seismic_lines_3D) +
+      scale(trails) +
+      scale(transmission_lines) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H6: un-vegetated linear features (paved/graveled)
+```{r unveg_lf, message=FALSE}
+unveg_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(roads) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+  
+## 4) linear feature model selection
+```{r lf_sel}
+lf_sel <-
+  
+  model.sel(null,
+            global_lf,
+            pipeline_lf,
+            narrow_lf,
+            wide_lf,
+            veg_lf,
+            unveg_lf)
+
+# run lf_sel to see output
+lf_sel
+```
+   
+result:  
+- wide_lf model best-supported by delta > 2.00  
+- global_lf model second-best supported
+
+## 5) creating a wide linear feature variable
+```{r wide_linear}
+coyote_data <-
+  
+  coyote_data %>% 
+  
+  mutate(wide_linear =
+           roads + 
+           seismic_lines +
+           transmission_lines)
+```
+
+## 6) hypothesis-testing model set
+
+#### <span style="color: darkblue;">step 2:</span> test hypotheses using wide_linear variable
+
+H1: global model (natural landcover, wide linear features, all mammals)
+```{r global, message=FALSE}
+global <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(nat_land) +
+      scale(wide_linear) +
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H2: natural landcover
+```{r lc, message=FALSE}
+lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(nat_land) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H3: wide linear features and natural landcover
+```{r wide_lc, message=FALSE}
+wide_lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(wide_linear) +
+      scale(nat_land) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H4: prey species
+```{r prey, message=FALSE}
+prey <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H5: prey species and natural landcover
+```{r prey_lc, message=FALSE}
+prey_lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(nat_land) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H6: competitor species
+```{r comp, message=FALSE}
+comp <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H7: competitor species and natural landcover
+```{r comp_lc, message=FALSE}
+comp_lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      scale(nat_land) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H8: prey species and wide linear features
+```{r prey_wide, message=FALSE}
+prey_wide <-
+  
+  glmer(
+  cbind(coyote_pres, coyote_abs) ~ 
+    scale(white_tailed_deer) +
+    scale(moose) +
+    scale(red_squirrel) +
+    scale(snowshoe_hare) +
+    scale(wide_linear) +
+    (1 | array),
+  data = coyote_data,
+  family = binomial)
+```
+
+H9: competitor species and wide linear features
+```{r comp_wide, message=FALSE}
+comp_wide <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      scale(wide_linear) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H10: prey species, wide linear features and natural landcover
+```{r prey_wide_lc, message=FALSE}
+prey_wide_lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(wide_linear) +
+      scale(nat_land) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H11: competitor species, wide linear features and natural landcover
+```{r comp_wide_lc, message=FALSE}
+comp_wide_lc <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher) +
+      scale(nat_land) +
+      scale(wide_linear) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H12: global interaction model (natural landcover, all mammals, and interactions between wide linear features and top prey/competitor species)
+```{r global_int, message=FALSE}
+global_int <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(nat_land) +
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(lynx) +
+      scale(fisher) +
+      scale(wide_linear) * scale(snowshoe_hare) +
+      scale(wide_linear) * scale(grey_wolf) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H13: prey interaction model (all mammals and interaction between wide linear features and top prey species)
+```{r prey_int, message=FALSE}
+prey_int <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(wide_linear) * scale(snowshoe_hare) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H14: competitor interaction model (all mammals and interaction between wide linear features and top competitor species)
+```{r comp_int, message=FALSE}
+comp_int <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(lynx) +
+      scale(fisher) +
+      scale(wide_linear) * scale(grey_wolf) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H15: global prey interaction model (all mammals, natural landcover and interaction between wide linear features and top prey species)
+```{r prey_lc_int, message=FALSE}
+prey_lc_int <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(nat_land) +
+      scale(wide_linear) * scale(snowshoe_hare) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+H16: global competitor interaction model (all mammals, natural landcover and interaction between wide linear features and top competitor species)
+```{r comp_lc_int, message=FALSE}
+comp_lc_int <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(lynx) +
+      scale(fisher) +
+      scale(nat_land) +
+      scale(wide_linear) * scale(grey_wolf) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+```
+
+## 7) comparing fixed vs random effects
+
+#### testing an example model (global) with a random effect for array against the same model without a random effect (i.e., a fixed effect global model)
+
+#### first: run the fixed effect global model
+
+H17: fixed effect global model (natural landcover, wide linear features, all mammals) without random effect
+```{r fe_global, message=FALSE}
+fe_global <-
+  
+  glm(
+    cbind(coyote_pres, coyote_abs) ~
+      scale(nat_land) +
+      scale(wide_linear) +
+      scale(white_tailed_deer) +
+      scale(moose) +
+      scale(red_squirrel) +
+      scale(snowshoe_hare) +
+      scale(grey_wolf) +
+      scale(lynx) +
+      scale(fisher),
+    data = coyote_data,
+    family = binomial)
+```
+
+#### then, run model selection:
+```{r fe_re_sel}
+model.sel(global,
+          fe_global)
+```
+  
+result: random effects model best-supported
+
+## 8) hypothesis-testing model selection
+```{r h_sel}
+h_sel <-
+  
+  model.sel(null,
+            global,
+            lc,
+            wide_lc,
+            prey,
+            prey_lc,
+            comp,
+            comp_lc,
+            prey_wide,
+            comp_wide,
+            prey_wide_lc,
+            comp_wide_lc,
+            global_int,
+            prey_int,
+            comp_int,
+            prey_lc_int,
+            comp_lc_int)
+
+# run h_sel to see output
+h_sel
+```
+  
+result:  
+- global model best supported by delta > 2.00  
+- global_int model second-best supported
+
+## 9) detection data
+
+#### sum the number of independent detections of each focal species using purrr:
+```{r sum_ind_det}
+coyote_data %>% 
+  
+  select_if(is.numeric) %>% # only consider numeric data
+  
+  map_dbl(sum) # sum down each column
+```
+
+#### count the number of camera stations where coyotes were detected:
+```{r coyote_pres}
+sum(coyote_data$coyote_pres != 0,
+    na.rm = TRUE)
+```

@@ -49,7 +49,7 @@ global_lf <-
     data = coyote_data,
     family = binomial)
 
-# H2: pipelines (on their own since hard to classify, variable widths)
+# H2: pipelines (on their own since hard to classify, variable widths + correlated with other features)
 pipeline_lf <-
   
   glmer(
@@ -311,7 +311,7 @@ prey_int <-
     data = coyote_data,
     family = binomial)
 
-# H13: competitor interaction model (all mammals and interaction between wide linear features and top competitor species)
+# H14: competitor interaction model (all mammals and interaction between wide linear features and top competitor species)
 comp_int <-
   
   glmer(
@@ -323,7 +323,7 @@ comp_int <-
     data = coyote_data,
     family = binomial)
 
-# H14: global prey interaction model (all mammals, natural landcover and interaction between wide linear features and top prey species)
+# H15: global prey interaction model (all mammals, natural landcover and interaction between wide linear features and top prey species)
 prey_lc_int <-
   
   glmer(
@@ -337,7 +337,7 @@ prey_lc_int <-
     data = coyote_data,
     family = binomial)
 
-# H15: global competitor interaction model (all mammals, natural landcover and interaction between wide linear features and top competitor species)
+# H16: global competitor interaction model (all mammals, natural landcover and interaction between wide linear features and top competitor species)
 comp_lc_int <-
   
   glmer(
@@ -350,11 +350,11 @@ comp_lc_int <-
     data = coyote_data,
     family = binomial)
 
-# 7) comparing fixed and random effect models ---------------------------------------------------------------------
+# 7) comparing fixed vs random effect models ---------------------------------------------------------------------
 
-# testing  an example model (global) with a random effect for array against the same model without a random effect
+# testing an example model (global) with a random effect for array against the same model without a random effect
 
-# H16: global model (natural landcover, wide linear features, all mammals) without random effect
+# H17: global model (natural landcover, wide linear features, all mammals) without random effect
 fe_global <-
   
   glm(
