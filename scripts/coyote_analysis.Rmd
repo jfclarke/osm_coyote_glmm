@@ -355,7 +355,7 @@ global_int <-
     family = binomial)
 ```
 
-H13: prey interaction model (all mammals and interaction between wide linear features and top prey species)
+H13: prey interaction model (all prey species and interaction between wide linear features and top prey species)
 ```{r prey_int, message=FALSE}
 prey_int <-
   
@@ -370,7 +370,7 @@ prey_int <-
     family = binomial)
 ```
 
-H14: competitor interaction model (all mammals and interaction between wide linear features and top competitor species)
+H14: competitor interaction model (all competitor species and interaction between wide linear features and top competitor species)
 ```{r comp_int, message=FALSE}
 comp_int <-
   
@@ -384,7 +384,7 @@ comp_int <-
     family = binomial)
 ```
 
-H15: global prey interaction model (all mammals, natural landcover and interaction between wide linear features and top prey species)
+H15: global prey interaction model (all prey species, natural landcover and interaction between wide linear features and top prey species)
 ```{r prey_lc_int, message=FALSE}
 prey_lc_int <-
   
@@ -400,7 +400,7 @@ prey_lc_int <-
     family = binomial)
 ```
 
-H16: global competitor interaction model (all mammals, natural landcover and interaction between wide linear features and top competitor species)
+H16: global competitor interaction model (all competitor species, natural landcover and interaction between wide linear features and top competitor species)
 ```{r comp_lc_int, message=FALSE}
 comp_lc_int <-
   

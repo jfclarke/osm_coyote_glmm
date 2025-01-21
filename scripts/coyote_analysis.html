@@ -679,8 +679,8 @@ species)</p>
       (1 | array),
     data = coyote_data,
     family = binomial)</code></pre>
-<p>H13: prey interaction model (all mammals and interaction between wide
-linear features and top prey species)</p>
+<p>H13: prey interaction model (all prey species and interaction between
+wide linear features and top prey species)</p>
 <pre class="r"><code>prey_int &lt;-
   
   glmer(
@@ -692,8 +692,8 @@ linear features and top prey species)</p>
       (1 | array),
     data = coyote_data,
     family = binomial)</code></pre>
-<p>H14: competitor interaction model (all mammals and interaction
-between wide linear features and top competitor species)</p>
+<p>H14: competitor interaction model (all competitor species and
+interaction between wide linear features and top competitor species)</p>
 <pre class="r"><code>comp_int &lt;-
   
   glmer(
@@ -704,8 +704,9 @@ between wide linear features and top competitor species)</p>
       (1 | array),
     data = coyote_data,
     family = binomial)</code></pre>
-<p>H15: global prey interaction model (all mammals, natural landcover
-and interaction between wide linear features and top prey species)</p>
+<p>H15: global prey interaction model (all prey species, natural
+landcover and interaction between wide linear features and top prey
+species)</p>
 <pre class="r"><code>prey_lc_int &lt;-
   
   glmer(
@@ -718,8 +719,8 @@ and interaction between wide linear features and top prey species)</p>
       (1 | array),
     data = coyote_data,
     family = binomial)</code></pre>
-<p>H16: global competitor interaction model (all mammals, natural
-landcover and interaction between wide linear features and top
+<p>H16: global competitor interaction model (all competitor species,
+natural landcover and interaction between wide linear features and top
 competitor species)</p>
 <pre class="r"><code>comp_lc_int &lt;-
   

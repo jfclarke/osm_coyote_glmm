@@ -1,7 +1,7 @@
 # PLOTTING/MAPPING FOR COYOTE MANUSCRIPT
 # author: Jamie Clarke
 
-# last updated: November 19 2024
+# last updated: January 14 2025
 
 # 1) set-up ---------------------------------------------------------------
 
@@ -22,9 +22,10 @@ library(ggeffects)
 library(scales)
 library(rphylopic)
 library(MuMIn)
+library(car)
 
 # set ggplot theme
-theme_set(theme_classic())
+theme_set(theme_classic(base_size = 12))
 
 # 2) data import ----------------------------------------------------------
 
@@ -78,7 +79,7 @@ global_odds <-
   rownames_to_column(var = 'term') %>% 
   
   # convert to tibble for easier manipulation
-  as.tibble() %>%
+  as_tibble() %>%
   
   # remove intercept information
   filter(term != '(Intercept)') %>% 
@@ -99,7 +100,18 @@ global_odds <-
                        'fisher')) %>% 
   
   # change label column into a factor for plotting
-  mutate(label = as.factor(label))
+  mutate(label = as.factor(label)) %>% 
+  
+  # add column for whether error bars overlap with 1 (for plotting)
+  add_column(overlap = c('N',
+                         'N',
+                         'Y',
+                         'Y',
+                         'Y',
+                         'N',
+                         'N',
+                         'N',
+                         'Y'))
 
 # 4) odds ratios plot -----------------------------------------------------
 
@@ -112,27 +124,59 @@ odds_plot <-
            mutate(label = fct_relevel(label,
                                       'natural landcover',
                                       'wide linear features',
-                                      'moose',
+                                      'fisher',
+                                      'lynx',
+                                      'grey wolf',
                                       'red squirrel',
                                       'snowshoe hare',
                                       'white-tailed deer',
-                                      'fisher',
-                                      'grey wolf',
-                                      'lynx')),
+                                      'moose')),
          aes(x = label,
-             y = est)) +
+             y = est,
+             color = overlap)) +
+
+  # add background for landscape covariates
+  annotate('rect',
+           xmin = 7.5,
+           xmax = 10,
+           ymin = -Inf,
+           ymax = Inf,
+           fill = 'darkseagreen',
+           alpha = 0.4) +
+  
+  # add background for competitor covariates
+  annotate('rect',
+           xmin = 4.5,
+           xmax = 7.5,
+           ymin = -Inf,
+           ymax = Inf,
+           fill = 'lightsteelblue1',
+           alpha = 0.4) +
+  
+  # add background for prey covariates
+  annotate('rect',
+           xmin = 0,
+           xmax = 4.5,
+           ymin = -Inf,
+           ymax = Inf,
+           fill = 'tomato',
+           alpha = 0.2) +
+  
+  # add line at 1
+  geom_hline(yintercept = 1,
+             alpha = 0.7) +
   
   # add points for estimates
-  geom_point() +
+  geom_point(size = 3) +
   
   # add confidence intervals
-  geom_errorbar(aes(ymin = lower,
-                    ymax = upper),
-                linewidth = 0.5,
-                width = 0.4) +
+  geom_linerange(aes(ymin = lower,
+                     ymax = upper),
+                 linewidth = 0.5) +
   
-  geom_hline(yintercept = 1,
-             alpha = 0.5) +
+  # set colour based on whether error bars overlap with 1
+  scale_color_manual(values = c('black', 'grey70' ),
+                     labels = c('N', 'Y')) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
@@ -145,7 +189,9 @@ odds_plot <-
   
   # specify theme elements
   theme(panel.grid = element_blank(),
-        axis.title.y = element_blank())
+        axis.title.y = element_blank(),
+        legend.position = 'none',
+        axis.title.x = element_text(size = 14))
 
 # 5) export odds ratio plot -----------------------------------------------
 
@@ -158,11 +204,17 @@ ggsave('odds_ratio_plot.tiff',
 
 # predicted probabilities given each covariates of interest
 
+pp_nat_land <-
+  
+  ggpredict(global,
+            terms = 'nat_land [all]',
+            type = 'fe') # fe = fixed effects
+
 pp_wide_linear <-
   
   ggpredict(global,
             terms = 'wide_linear [all]',
-            type = 'fe') # fe = fixed effects
+            type = 'fe')
 
 pp_moose <-
   
@@ -213,6 +265,37 @@ pp_lynx <-
 # where 'species name' is the scientific or common name of the species of interest and n = # is the number of options you want to peruse
 # when you find the image you want: select it and find the uuid in the console output
 
+# plot predicted probability of coyote occurence given proportion of natural landcover
+plot_nat_land <- 
+  
+  ggplot(pp_nat_land,
+         aes(x = x,
+             y = predicted)) +
+  
+  geom_line(aes()) +
+  
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high),
+              fill = 'darkseagreen',
+              alpha = 0.4) +
+  
+  scale_x_continuous(limits = c(0.7, 1),
+                     breaks = seq(0.7, 1, by = 0.1),
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(limits = c(0, 0.65),
+                     breaks = seq(0, 0.65, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  xlab('proportion natural land') +
+  
+  ylab(' ') +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(size = 9),
+        axis.title.y.left = element_text(size = 35))
+
 # plot predicted probability of coyote occurence given proportion of wide linear features
 plot_wide_linear <- 
   
@@ -224,6 +307,7 @@ plot_wide_linear <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
+              fill = 'darkseagreen',
               alpha = 0.4) +
   
   scale_x_continuous(expand = c(0, 0)) +
@@ -232,7 +316,7 @@ plot_wide_linear <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('proportion of wide LFs') +
+  xlab('proportion wide LFs') +
   
   ylab(' ') +
   
@@ -252,7 +336,8 @@ plot_moose <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.4) +
+              fill = 'tomato',
+              alpha = 0.2) +
   
   scale_x_continuous(expand = c(0, 0)) +
   
@@ -286,7 +371,8 @@ plot_red_squirrel <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.4) +
+              fill = 'tomato',
+              alpha = 0.2) +
   
   scale_x_continuous(limits = c(0, 150),
                      breaks = seq(0, 150, by = 50),
@@ -322,7 +408,8 @@ plot_snowshoe_hare <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.4) +
+              fill = 'tomato',
+              alpha = 0.2) +
   
   scale_x_continuous(expand = c(0,0)) +
   
@@ -356,7 +443,8 @@ plot_white_tailed_deer <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              alpha = 0.4) +
+              fill = 'tomato',
+              alpha = 0.2) +
   
   scale_x_continuous(limits = c(0, 130),
                      breaks = seq(0, 130, by = 30),
@@ -392,6 +480,7 @@ plot_fisher <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
+              fill = 'lightsteelblue1',
               alpha = 0.4) +
   
   scale_x_continuous(limits = c(0, 12.5),
@@ -428,6 +517,7 @@ plot_grey_wolf <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
+              fill = 'lightsteelblue1',
               alpha = 0.4) +
   
   scale_x_continuous(limits = c(0, 13),
@@ -464,6 +554,7 @@ plot_lynx <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
+              fill = 'lightsteelblue1',
               alpha = 0.4) +
   
   scale_x_continuous(expand = c(0, 0)) +
@@ -492,30 +583,32 @@ plot_lynx <-
 # combine predicted probabilities plots together in one figure
 pp_plot <-
   
-  ggarrange(plot_wide_linear,
-            plot_moose,
+  ggarrange(plot_nat_land,
+            plot_wide_linear,
+            plot_fisher,
+            plot_lynx,
+            plot_grey_wolf,
             plot_red_squirrel,
             plot_snowshoe_hare,
             plot_white_tailed_deer,
-            plot_fisher,
-            plot_grey_wolf,
-            plot_lynx,
+            plot_moose,
             labels = 'auto',
             label.x = 0.88,
             font.label = list(size = 12),
-            ncol = 4,
+            ncol = 5,
             nrow = 2) %>% 
   
-  annotate_figure(left = text_grob('predicted coyote occurence',
+  annotate_figure(left = text_grob('predicted coyote occurrence',
                                    rot = 90,
-                                   vjust = 0.5))
+                                   vjust = 0.5),
+                  fig.lab.size = 14)
 
 # 9) export predicted probabilities figure ---------------------------------
 
 ggsave('predicted_probabilities_panel.png',
        pp_plot,
        path = 'figures',
-       width = 200,
+       width = 250,
        height = 100,
        units = 'mm',
        bg = 'white')
@@ -565,7 +658,7 @@ re_plot <-
   labs(color = NULL,
        fill = NULL,
        x = 'proportion of wide LFs',
-       y = 'predicted coyote occurence')
+       y = 'predicted coyote occurrence')
 
 # save plot
 ggsave('re_predicted_probability.png',
@@ -578,10 +671,91 @@ ggsave('re_predicted_probability.png',
 # 11) variance inflation factor ------------------------------------------
 
 # calculate variance inflation factors (VIFs)
-vif(global)
+vif_model <-
+  
+  vif(global) %>% 
+  
+  # convert into a format that can be plotted
+  as_tibble() %>% 
+  
+  # add a column labelling covariate name
+  add_column(label = c('natural landcover',
+                       'wide linear features',
+                       'fisher',
+                       'lynx',
+                       'grey wolf',
+                       'red squirrel',
+                       'snowshoe hare',
+                       'white-tailed deer',
+                       'moose')) %>% 
+  
+  # add a column specifying covariate type
+  add_column(cov_type = c('land',
+                          'land',
+                          'comp',
+                          'comp',
+                          'comp',
+                          'prey',
+                          'prey',
+                          'prey',
+                          'prey'))
 
 # plot VIFs
+vif_plot <-
+  
+  ggplot(data = vif_model %>% 
+           
+           # customize order of labels
+           mutate(label = fct_relevel(label,
+                                      'natural landcover',
+                                      'wide linear features',
+                                      'fisher',
+                                      'lynx',
+                                      'grey wolf',
+                                      'red squirrel',
+                                      'snowshoe hare',
+                                      'white-tailed deer',
+                                      'moose')),
+         aes(x = label,
+             y = value,
+             fill = cov_type)) +
+  
+  geom_col() +
+  
+  # set colour based on covariate type
+  scale_fill_manual(values = c('lightsteelblue1', 'darkseagreen', 'tomato'),
+                     labels = c('land', 'comp', 'prey')) +
+  
+  # add line at 1
+  geom_hline(yintercept = 1,
+             alpha = 0.5,
+             linetype = 'dashed') +
+  
+  # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
+  scale_x_discrete(limits = rev) +
+  
+  scale_y_continuous(limits = c(0, 1.35),
+                     breaks = seq(0, 1.3, by = 0.5),
+                     expand = c(0, 0)) +
+  
+  # rename x axis title
+  ylab('VIF values') +
+  
+  # flip x and y axis 
+  coord_flip() +
+  
+  # specify theme elements
+  theme(axis.title.y = element_blank(),
+        legend.position = 'none',
+        axis.title.x = element_text(size = 14))
 
+# save plot
+ggsave('vif_plot.png',
+       vif_plot,
+       path = 'figures',
+       width = 100,
+       height = 100,
+       units = 'mm')
 
 # 12) mapping set-up ----------------------------------------------------------
 
@@ -645,7 +819,7 @@ ab_boundary <-
 # F) crop Alberta spatial info to northeast
 
 # figure out spatial extent of LUs
-extent(lus)
+raster::extent(lus)
 # xmin: 368007.3 
 # xmax: 561572 
 # ymin: 6038172 
@@ -756,9 +930,8 @@ lus_cts <-
            lwd = 0.5) +
   
   tm_shape(cities) + 
-  tm_dots(col = 'grey40',
-          size = 0.3,
-          shape = 15) +
+  tm_dots(col = 'black',
+          size = 0.3) +
   tm_text('name',
           size = 0.7,
           just = c(-0.11,-0.11)) +
@@ -810,25 +983,9 @@ lus_cts <-
                text.size = 0.7,
                width = 0.2) +
   
-  # add legend
-  # tm_add_legend(type = 'symbol',
-  #               col = c('grey95', '#DC3220', '#005AB5'),
-  #               shape = c(15, 16, 16),
-  #               size = c(0.5, 0.22, 0.22),
-  #               labels = c('landscape units', '2021-2022 deployments', '2022-2023 deployments')) +
-  
   # specify layout elements
   tm_layout(frame = FALSE,
             bg.color = 'transparent')
-            # legend.bg.color = 'grey70',
-            # legend.frame = 'black',
-            # legend.frame.lwd = 0.7,
-            # legend.text.size = 0.8,
-            # legend.width = 0.6,
-            # legend.height = -0.16,
-            # legend.position = c('left', 'top'))
-
-# then: set NE Alberta bbox as an sf object
 
 ### next: set NE Alberta bbox as an sf object
 ne_ab_bbox <- 
@@ -845,7 +1002,7 @@ ne_ab_can <-
   
   tm_shape(ne_ab_bbox) +
   tm_borders(col = 'black',
-             lwd = 1) +
+             lwd = 0.75) +
   
   tm_layout(frame.lwd = 2)
 
@@ -860,21 +1017,24 @@ inset_map <-
   
   ggdraw(lus_cts_grob) + # add first layer = study area map
   draw_plot(ne_ab_can_grob, # inset map of Canada and specify position
-            x = 0.25,
-            y = 0.71,
-            width = 0.25,
-            height = 0.25) +
+            x = 0.13,
+            y = 0.69,
+            width = 0.27,
+            height = 0.27) +
   theme(panel.background =
           element_rect(
-            fill = 'transparent'))
+            fill = 'transparent'),
+        panel.border = 
+          element_rect(
+            colour = NA,
+            fill = NA))
 
 # 14) export study area map with inset ---------------------------------------------------------------------
 
 ggsave('study_area_map.png',
        inset_map,
        path = 'figures',
-       width = 183,
-       height = 100,
+       width = 100,
+       height = 105,
        units = 'mm',
        bg = 'transparent')
-
