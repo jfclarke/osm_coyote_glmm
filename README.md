@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 # osm_coyote_glmm
 This repository contains data, R scripts/outputs and other things needed for the manuscript *Energy infrastructure clears the way for coyotes in Alberta’s oil sands*.
@@ -124,7 +124,7 @@ Variable list:
 
 
 #### DATA-SPECIFIC INFORMATION FOR: [<span style = "color: #7B0F17;">OSM_covariates_grouped_2021_2022.csv</span>]  
-Proportional landcover and human footprint index information, binned into general categories.
+Proportional landcover and human footprint index information, binned into general categories. More information on the human footprint index - as well as links to download data - can be found [here](https://abmi.ca/abmi-home/data-resources/data-portal-main/data-portal.html?rootPath=/&itemPerPage=6).
 
 * **Number of variables/columns:** 19
 *  **Number of observations/rows:** 4,660
