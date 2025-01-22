@@ -39,7 +39,7 @@ This repository contains data, R scripts/outputs and other things needed for the
 
 <hr>
 
-### DATA & FILE OVERVIEW
+### DATA + FILE OVERVIEW
 
 **Files in 'osm_coyote_glmm' Folder:**
 		
