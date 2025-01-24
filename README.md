@@ -1,8 +1,3 @@
----
-output:
-  html_document: default
-  pdf_document: default
----
 # osm_coyote_glmm
 This repository contains data, R scripts/outputs and other things needed for the manuscript *Energy infrastructure clears the way for coyotes in Alberta’s oil sands*.
 
