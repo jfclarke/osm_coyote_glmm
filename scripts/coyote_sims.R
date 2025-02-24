@@ -398,6 +398,16 @@ h_sel <-
             prey_lc_int,
             comp_lc_int)
 
+#BARNAS ADDED FEB 24TH
+#Heres a bonus chunk of code to clean up that model selction table
+h_sel2<-data.frame(h_sel)
+h_sel2$model<-row.names(h_sel2)
+rownames(h_sel2)<-NULL
+h_sel2<-h_sel2%>%
+  dplyr::select(model, df, logLik, AICc, delta, weight)
+
+
+
 # result: global model best supported by delta > 2.00
 #         global_int model second-best supported
 
@@ -456,6 +466,29 @@ sim_wide_lf <- rep(runif(n_cts * n_arrays,
                          max = 1), # uniform draws from 0 to 1
                    each = n_obs)
 
+
+#BARNAS - Ok what about independent detections. Currently using a random uniform draw, but what does the actual data look like?
+#here is the model we are simulating from
+summary(global)
+#Ah, summary shows you are modeling the scaled variables. So for example:
+#Here is the range of values of independent detections in the raw data - 0 to 138
+summary(coyote_data$white_tailed_deer)
+#And here is the summary of the scaled data
+summary(scale(coyote_data$white_tailed_deer))
+
+#So you can do one of two things, you can either
+#1) simulate data based on its raw empirical distribution and scale it.
+#2) simluate scaled data directly (probably easier)
+#Not sure which one is best, but just means you have to keep track a bit better of what you have done/are doing
+
+#For example - this simulates a uniform distributon of the scaled data
+sim_wtd <- rep(runif(n_cts * n_arrays,
+                     min = min(scale(coyote_data$white_tailed_deer)), #from the minimum of the scaled empirical data
+                     max = max(scale(coyote_data$white_tailed_deer))), #to the maximum of the scaled empirical data
+               each = n_obs)
+               
+
+
 # for independent detection data: number of detections ranges from min to max for that species, based on actual data
 sim_wtd <- rep(runif(n_cts * n_arrays,
                      min = 0,
@@ -492,11 +525,14 @@ sim_fisher <- rep(runif(n_cts * n_arrays,
                         max = 12),
                   each = n_obs)
 
+
 # simulate random effect of array
 array_effect <- rep(rnorm(n_arrays,
                           mean = 0,
                           sd = array_sd),
                     each = n_cts * n_obs)
+
+
 
 # check this by wrapping into a dataframe
 df <- data.frame(ct,
@@ -511,6 +547,18 @@ df <- data.frame(ct,
                  sim_wolf,
                  sim_lynx,
                  sim_fisher)
+
+#I am being lazy here sort of and just scaling everyting in post to see if it works
+sim_nat_land<-scale(sim_nat_land)
+sim_wide_lf<-scale(sim_wide_lf)
+sim_wtd<-scale(sim_wtd)
+sim_moose<-scale(sim_moose)
+sim_squirrel<-scale(sim_squirrel)
+sim_hare<-scale(sim_hare)
+sim_wolf<-scale(sim_wolf)
+sim_lynx<-scale(sim_lynx)
+sim_fisher<-scale(sim_fisher)
+
 
 # calculate the linear predictor for each observation
 linear_pred <-
@@ -563,6 +611,9 @@ df <- data.frame(ct,
                  present,
                  absent)
 
+
+
+
 # fit GLMM to simulated data
 glmm <- glm(
   cbind(present, absent) ~
@@ -582,8 +633,24 @@ glmm <- glm(
 summary(glmm)
 
 
+#Hint - I think you'll need this, any idea why?
+df$array<-factor(df$array)
+andrews_glmm<-glmer(
+  cbind(present, absent) ~
+    sim_nat_land +
+    sim_wide_lf +
+    sim_wtd +
+    sim_moose +
+    sim_squirrel +
+    sim_hare +
+    sim_wolf +
+    sim_lynx +
+    sim_fisher +
+    (1|array),
+  data = df,
+  family = binomial)
 
-
+summary(andrews_glmm)
 
 
 
