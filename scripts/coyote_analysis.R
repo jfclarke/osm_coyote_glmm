@@ -120,7 +120,6 @@ lf_sel <-
 # result: wide_lf model best supported by delta > 2.00
 #         global_lf model second-best supported, unveg_lf close third
 
-
 # 5) creating a wide linear feature variable ------------------------------
 
 coyote_data <-
@@ -414,3 +413,434 @@ coyote_data %>%
 # count the number of camera stations where coyotes were detected
 sum(coyote_data$coyote_pres != 0,
     na.rm = TRUE)
+
+# 10) evaluation by simulation --------------------------------------------
+
+# this section is adapted from Ariel Muldoon's 'Simulate! Simulate!' series (https://aosmith.rbind.io/) and work by Dr Andrew Barnas, with coding help from Andrew (thanks!).
+
+# step 1: define overall set-up
+n_cts <- 40 # number of cameras per array
+n_arrays <- 6 # number of different arrays
+n_obs <- 1 # number of years
+n <- n_cts * n_arrays * n_obs # total observations
+
+# step 2: define model parameters
+b0 <- -1.4 # intercept value
+b1 <- -0.40 # slope coefficient for nat_land
+b2 <- 0.50 # slope coefficient for wide_linear
+b3 <- 0.06 # slope coefficient for white-tailed deer
+b4 <- -0.06 # slope coefficient for moose
+b5 <- 0.08 # slope coefficient for red squirrel
+b6 <- 0.19 # slope coefficient for snowshoe hare
+b7 <- 0.19 # slope coefficient for grey wolf
+b8 <- 0.17 # slope coefficient for lynx
+b9 <- 0.02 # slope coefficient for fisher
+array_sd <- 0.28
+
+# assign camera and array numbers so we can check them in the dataframe
+ct <- rep(1:(n_cts * n_arrays),
+          each = n_obs)
+
+array <-rep (1:n_arrays,
+             each = n_cts * n_obs)
+
+# simulate 'collected' data
+# for landscape data: proportional coverage ranges from 0 to 1
+sim_nat_land <- rep(runif(n_cts * n_arrays,
+                          min = 0,
+                          max = 1), # uniform draws from 0 to 1
+                    each = n_obs) 
+
+sim_wide_lf <- rep(runif(n_cts * n_arrays,
+                         min = 0,
+                         max = 1), # uniform draws from 0 to 1
+                   each = n_obs)
+
+# for independent detection data: number of detections ranges from min to max for that species, based on actual data
+sim_wtd <- rep(runif(n_cts * n_arrays,
+                     min = 0,
+                     max = 138),
+               each = n_obs)
+
+sim_moose <- rep(runif(n_cts * n_arrays,
+                       min = 0,
+                       max = 35),
+                 each = n_obs)
+
+sim_squirrel <- rep(runif(n_cts * n_arrays,
+                         min = 0,
+                         max = 143),
+                   each = n_obs)
+
+sim_hare <- rep(runif(n_cts * n_arrays,
+                      min = 0,
+                      max = 230),
+                each = n_obs)
+
+sim_wolf <- rep(runif(n_cts * n_arrays,
+                      min = 0,
+                      max = 13),
+                each = n_obs)
+
+sim_lynx <- rep(runif(n_cts * n_arrays,
+                      min = 0,
+                      max = 23),
+                each = n_obs)
+
+sim_fisher <- rep(runif(n_cts * n_arrays,
+                        min = 0,
+                        max = 12),
+                  each = n_obs)
+
+# simulate random effect of array
+array_effect <- rep(rnorm(n_arrays,
+                          mean = 0,
+                          sd = array_sd),
+                    each = n_cts * n_obs)
+
+# check this by wrapping into a dataframe
+df <- data.frame(ct,
+                 array,
+                 array_effect,
+                 sim_nat_land,
+                 sim_wide_lf,
+                 sim_wtd,
+                 sim_moose,
+                 sim_squirrel,
+                 sim_hare,
+                 sim_wolf,
+                 sim_lynx,
+                 sim_fisher)
+
+# calculate the linear predictor for each observation
+linear_pred <-
+  
+  b0 +
+  b1 * sim_nat_land +
+  b2 * sim_wide_lf +
+  b3 * sim_wtd +
+  b4 * sim_moose +
+  b5 * sim_squirrel +
+  b6 * sim_hare +
+  b7 * sim_wolf +
+  b8 * sim_lynx +
+  b9 * sim_fisher
+  array_effect
+
+# convert linear predictors to probabilities, using logit link function
+prob <- plogis(linear_pred)
+
+# simulate Bernoulli trials based on probabilities, with variable effort per camera
+# defining 4 to 15 sampling opportunities (= months) per trial - these are min/max deployment durations (where camera was alive)
+total_trials <- sample(4:15,
+                       n,
+                       replace = TRUE)
+
+# use random number generator to determine number of successes (presences) and failures (absences)
+# run as many times as observations in dataset
+present <- rbinom(n,
+                  size = total_trials,
+                  prob = prob)
+
+absent <- total_trials - present
+
+# wrap everything into the dataframe
+df <- data.frame(ct,
+                 array,
+                 array_effect,
+                 sim_nat_land,
+                 sim_wide_lf,
+                 sim_wtd,
+                 sim_moose,
+                 sim_squirrel,
+                 sim_hare,
+                 sim_wolf,
+                 sim_lynx,
+                 sim_fisher,
+                 linear_pred,
+                 prob,
+                 total_trials,
+                 present,
+                 absent)
+
+# fit GLMM to simulated data
+glmm <- glm(
+  cbind(present, absent) ~
+    sim_nat_land +
+    sim_wide_lf +
+    sim_wtd +
+    sim_moose +
+    sim_squirrel +
+    sim_hare +
+    sim_wolf +
+    sim_lynx +
+    sim_fisher +
+    (1|array),
+  data = df,
+  family = binomial)
+
+summary(glmm)
+
+
+
+
+
+
+
+
+# step 1: define initial parameters
+n_cts <- 233 # number of cameras deployed for study period
+n_sample_periods <- 24 # cameras deployed for a cumulative total of 2 years
+n <- n_cts * n_sample_periods # total sample size
+
+# step 2: define true parameters of fixed effects, based on results from global model
+b0 = -1.4 # intercept value
+b1 <- -0.40 # slope coefficient for nat_land
+b2 <- 0.50 # slope coefficient for wide_linear
+b3 <- 0.06 # slope coefficient for white-tailed deer
+b4 <- -0.06 # slope coefficient for moose
+b5 <- 0.08 # slope coefficient for red squirrel
+b6 <- 0.19 # slope coefficient for snowshoe hare
+b7 <- 0.19 # slope coefficient for grey wolf
+b8 <- 0.17 # slope coefficient for lynx
+b9 <- 0.02 # slope coefficient for fisher
+
+# and for random effects
+re_sd <- 0.28 # standard deviation for array
+
+# step 2: create a data-generating function
+data_gen = function(n_cts = 233, # number of cameras deployed for study period
+                    n_sample_periods = 24, # cameras deployed for a cumulative total of 2 years
+                    b0 = -1.4, # intercept value
+                    b1 = -0.40, # slope coefficient for nat_land
+                    b2 = 0.50, # slope coefficient for wide_linear
+                    b3 = 0.06, # slope coefficient for white-tailed deer
+                    b4 = -0.06, # slope coefficient for moose
+                    b5 = 0.08, # slope coefficient for red squirrel
+                    b6 = 0.19, # slope coefficient for snowshoe hare
+                    b7 = 0.19, # slope coefficient for grey wolf
+                    b8 = 0.17, # slope coefficient for lynx
+                    b9 = 0.02, # slope coefficient for fisher
+                    re_sd = 0.28) # standard deviation for random effect of array
+{
+  # 
+  camera = rep(1:n_cts,
+        each = n_sample_periods)sim_ct = rep(1:n_cts,
+               each = n_sample_periods)
+  
+  sim_nat_land = rep(runif(n_cts, 0, 0.5),
+                     each = n_sample_periods)
+  
+  sim_wide_linear = rep(runif(n_cts, 0, 0.5),
+                        each = n_sample_periods)
+  
+  sim_white_tailed_deer = rep(runif(n_cts, 0, 0.5),
+                              each = n_sample_periods)
+  
+  sim_moose = rep(runif(n_cts, 0, 0.5),
+                  each = n_sample_periods)
+  
+  sim_red_squirrel = rep(runif(n_cts, 0, 0.5),
+                         each = n_sample_periods)
+  
+  sim_snowshoe_hare = rep(runif(n_cts, 0, 0.5),
+                          each = n_sample_periods)
+  
+  sim_grey_wolf = rep(runif(n_cts, 0, 0.5),
+                      each = n_sample_periods)
+  
+  sim_lynx = rep(runif(n_cts, 0, 0.5),
+                 each = n_sample_periods)
+  
+  sim_fisher = rep(runif(n_cts, 0, 0.5),
+                   each = n_sample_periods)
+  
+  # then include random effect
+  array_effect = rep(rnorm(n_cts,
+                           mean = 0,
+                           sd = re_sd),
+                     each = n_sample_periods)
+  
+  # then include observation error
+  obs_error = rnorm(n = n_cts * n_sample_periods,
+                    mean = 0,
+                    sd = 0.05)
+  
+  # combine simulated data into a dataframe
+  sim_df = data.frame(sim_nat_land,
+                      sim_wide_linear,
+                      sim_white_tailed_deer,
+                      sim_moose,
+                      sim_red_squirrel,
+                      sim_snowshoe_hare,
+                      sim_grey_wolf,
+                      sim_lynx,
+                      sim_fisher,
+                      array_effect,
+                      obs_error)
+  
+  # calculate log odds
+  log_odds <- with(sim_df,
+                   b0 +
+                     b1*(sim_nat_land == 'sim_nat_land') +
+                     b2*(sim_wide_linear == 'sim_wide_linear') +
+                     b3*(sim_white_tailed_deer == 'sim_white_tailed_deer') +
+                     b4*(sim_moose == 'sim_moose') +
+                     b5*(sim_red_squirrel == 'sim_red_squirrel') +
+                     b6*(sim_snowshoe_hare == 'sim_snowshoe_hare') +
+                     b7*(sim_grey_wolf == 'sim_grey_wolf') +
+                     b8*(sim_lynx == 'sim_lynx') +
+                     b9*(sim_fisher == 'sim_fisher') +
+                     array_effect)
+  
+  # convert log odds to proportions
+  prop <- plogis(log_odds)
+  
+  # generate random number of months camera was active
+  sim_df$n_samples = sample(1:12, # number of months camera could have been active
+                            size = 5592,
+                            replace = TRUE)
+  
+  # generate presences/absences
+  sim_df$presence = rbinom(n = n_cts*2,
+                           size = sim_df$n_samples,
+                           prob = prop)
+  
+  sim_df$absence = sim_df$n_samples - sim_df$presence
+  
+  glmer(cbind(presence, n_samples - presence) ~ 
+          sim_nat_land +
+          sim_wide_linear +
+          sim_white_tailed_deer +
+          sim_moose +
+          sim_red_squirrel +
+          sim_snowshoe_hare +
+          sim_grey_wolf +
+          sim_lynx +
+          sim_fisher +
+          (1|))
+} 
+
+ 
+
+
+
+
+
+
+
+# step 2: build dataframe of simulated data
+# start with fixed effects
+camera <-
+  
+  rep(1:n_cts,
+      each = n_sample_periods)
+
+sim_ct <- 
+  
+  rep(1:n_cts,
+      each = n_sample_periods)
+
+sim_nat_land <- 
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_wide_linear <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_white_tailed_deer <- 
+  
+  rep(runif(n_cts, 0, 0.5),
+               each = n_sample_periods)
+
+sim_moose <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_red_squirrel <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_snowshoe_hare <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_grey_wolf <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_lynx <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+sim_fisher <-
+  
+  rep(runif(n_cts, 0, 0.5),
+      each = n_sample_periods)
+
+# then include random effect
+array_effect <-
+  
+  rep(rnorm(n_cts,
+            mean = 0,
+            sd = re_sd),
+      each = n_sample_periods)
+
+# then include observation error
+obs_error <-
+  
+  rnorm(n = n_cts * n_sample_periods,
+        mean = 0,
+        sd = 0.05)
+
+# combine into a dataframe
+sim_df <-
+  
+  data.frame(camera,
+             sim_nat_land,
+             sim_wide_linear,
+             sim_white_tailed_deer,
+             sim_moose,
+             sim_red_squirrel,
+             sim_snowshoe_hare,
+             sim_grey_wolf,
+             sim_lynx,
+             sim_fisher,
+             array_effect,
+             obs_error)
+
+# step 3: calculate log odds
+log_odds <- with(sim_df,
+                 b0 +
+                   b1*(sim_nat_land == 'sim_nat_land') +
+                   b2*(sim_wide_linear == 'sim_wide_linear') +
+                   b3*(sim_white_tailed_deer == 'sim_white_tailed_deer') +
+                   b4*(sim_moose == 'sim_moose') +
+                   b5*(sim_red_squirrel == 'sim_red_squirrel') +
+                   b6*(sim_snowshoe_hare == 'sim_snowshoe_hare') +
+                   b7*(sim_grey_wolf == 'sim_grey_wolf') +
+                   b8*(sim_lynx == 'sim_lynx') +
+                   b9*(sim_fisher == 'sim_fisher') +
+                   array_effect)
+
+# step 4: convert log odds to proportions
+prop <- plogis(log_odds)
+
+# step 5: generate presences/absences
+sim_df$n_samples = sample(1:12, # number of months camera could have been active
+                          size = 5592,
+                          replace = TRUE)
+
+sim_df$presence = rbinom(n = n_cts*2,
+                  size = sim_df$n_samples,
+                  prob = prop)
+
+sim_df$absence = sim_df$n_samples - sim_df$presence

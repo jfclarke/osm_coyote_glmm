@@ -25,7 +25,7 @@ library(MuMIn)
 library(car)
 
 # set ggplot theme
-theme_set(theme_classic(base_size = 12))
+theme_set(theme_classic())
 
 # 2) data import ----------------------------------------------------------
 
@@ -40,7 +40,21 @@ coyote_data <-
            seismic_lines +
            transmission_lines)
 
-# run top model (determined using coyote_analysis script)
+# run top models for step 1 and 2 (determined using coyote_analysis script)
+
+# step 1:
+wide_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(roads) +
+      scale(seismic_lines) +
+      scale(transmission_lines) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+
+# step 2:
 global <-
   
   glmer(
@@ -60,15 +74,15 @@ global <-
 
 # 3) calculating odds ratios --------------------------------------------------
 
-# first: calculate odds ratios
-global_odds <-
+# step 1:
+wide_lf_odds <-
   
   # calculate confidence intervals
-  confint(global,
+  confint(wide_lf,
           parm = 'beta_') %>% 
   
   # extract fixed effects coefficients
-  cbind(est = fixef(global)) %>% 
+  cbind(est = fixef(wide_lf)) %>% 
   
   # exponentiate to get odds ratios
   exp() %>% 
@@ -89,6 +103,39 @@ global_odds <-
          upper = '97.5 %') %>% 
   
   # add a column with cleaned-up plot label names (so we don't have to do this in ggplot2)
+  add_column(label = c('roads',
+                       'seismic lines',
+                       'transmission lines')) %>% 
+  
+  # change label column into a factor for plotting
+  mutate(label = as.factor(label)) %>% 
+  
+  # add column for whether error bars overlap with 1 (for plotting)
+  add_column(overlap = c('N',
+                         'N',
+                         'Y'))
+
+# step 2:
+global_odds <-
+  
+  confint(global,
+          parm = 'beta_') %>% 
+  
+  cbind(est = fixef(global)) %>% 
+  
+  exp() %>% 
+  
+  as.data.frame() %>% 
+  
+  rownames_to_column(var = 'term') %>% 
+  
+  as_tibble() %>%
+  
+  filter(term != '(Intercept)') %>% 
+
+  rename(lower = '2.5 %',
+         upper = '97.5 %') %>% 
+  
   add_column(label = c('natural landcover',
                        'wide linear features',
                        'white-tailed deer',
@@ -99,10 +146,8 @@ global_odds <-
                        'lynx',
                        'fisher')) %>% 
   
-  # change label column into a factor for plotting
   mutate(label = as.factor(label)) %>% 
   
-  # add column for whether error bars overlap with 1 (for plotting)
   add_column(overlap = c('N',
                          'N',
                          'Y',
@@ -115,8 +160,50 @@ global_odds <-
 
 # 4) odds ratios plot -----------------------------------------------------
 
-# plot odds ratios for global model
-odds_plot <-
+# step 1
+odds_plot_1 <-
+  
+  ggplot(data = wide_lf_odds,
+         aes(x = label,
+             y = est,
+             color = overlap)) +
+  
+  # add line at 1
+  geom_hline(yintercept = 1,
+             alpha = 0.7) +
+  
+  # add points for estimates
+  geom_point(size = 3) +
+  
+  # add confidence intervals
+  geom_linerange(aes(ymin = lower,
+                     ymax = upper),
+                 linewidth = 0.5) +
+  
+  # set colour based on whether error bars overlap with 1
+  scale_color_manual(values = c('black', 'grey70' ),
+                     labels = c('N', 'Y')) +
+  
+  # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
+  scale_x_discrete(limits = rev) +
+  
+  # rename y axis title
+  ylab('odds ratio') +
+  
+  # flip x and y axis 
+  coord_flip() +
+  
+  theme_classic() +
+  
+  # specify theme elements
+  theme(panel.grid = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        legend.position = 'none',
+        axis.title.x = element_text(size = 14))
+
+# step 2
+odds_plot_2 <-
   
   ggplot(data = global_odds %>%
            
@@ -187,17 +274,31 @@ odds_plot <-
   # flip x and y axis 
   coord_flip() +
   
+  theme_classic() +
+  
   # specify theme elements
   theme(panel.grid = element_blank(),
         axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
         legend.position = 'none',
         axis.title.x = element_text(size = 14))
 
-# 5) export odds ratio plot -----------------------------------------------
+# 5) export odds ratio plots -----------------------------------------------
 
-# save odds_plot to 'figures' folder
-ggsave('odds_ratio_plot.tiff',
-       odds_plot,
+# save odds_plot_1 to 'figures' folder
+ggsave('odds_ratio_lf.tiff',
+       odds_plot_1,
+       width = 150,
+       height = 100,
+       units = 'mm',
+       path = 'figures')
+
+# save odds_plot_2 to 'figures' folder
+ggsave('odds_ratio_h.tiff',
+       odds_plot_2,
+       width = 150,
+       height = 100,
+       units = 'mm',
        path = 'figures')
 
 # 6) determining predicted probabilities -----------------------------------------
@@ -287,13 +388,13 @@ plot_nat_land <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('proportion natural land') +
+  xlab('prop natural land') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35))
 
 # plot predicted probability of coyote occurence given proportion of wide linear features
@@ -310,19 +411,20 @@ plot_wide_linear <-
               fill = 'darkseagreen',
               alpha = 0.4) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('proportion wide LFs') +
+  xlab('prop wide LFs') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35))
 
 # plot predicted probability of coyote occurrence given total independent moose detections
@@ -339,19 +441,20 @@ plot_moose <-
               fill = 'tomato',
               alpha = 0.2) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total moose detections') +
+  xlab('moose detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add moose silhouette
@@ -376,19 +479,20 @@ plot_red_squirrel <-
   
   scale_x_continuous(limits = c(0, 150),
                      breaks = seq(0, 150, by = 50),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total squirrel detections') +
+  xlab('squirrel detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add squirrel silhouette
@@ -411,19 +515,20 @@ plot_snowshoe_hare <-
               fill = 'tomato',
               alpha = 0.2) +
   
-  scale_x_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total hare detections') +
+  xlab('hare detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add hare silhouette
@@ -448,19 +553,20 @@ plot_white_tailed_deer <-
   
   scale_x_continuous(limits = c(0, 130),
                      breaks = seq(0, 130, by = 30),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total deer detections') +
+  xlab('deer detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add deer silhouette
@@ -485,19 +591,20 @@ plot_fisher <-
   
   scale_x_continuous(limits = c(0, 12.5),
                      breaks = seq(0, 12.5, by = 3),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total fisher detections') +
+  xlab('fisher detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add fisher silhouette
@@ -522,19 +629,20 @@ plot_grey_wolf <-
   
   scale_x_continuous(limits = c(0, 13),
                      breaks = seq(0, 13, by = 3),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total wolf detections') +
+  xlab('wolf detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add wolf silhouette
@@ -557,19 +665,20 @@ plot_lynx <-
               fill = 'lightsteelblue1',
               alpha = 0.4) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total lynx detections') +
+  xlab('lynx detections') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
         axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.title.x = element_text(size = 14),
         axis.title.y.left = element_text(size = 35)) +
   
   # add lynx silhouette
@@ -594,14 +703,14 @@ pp_plot <-
             plot_moose,
             labels = 'auto',
             label.x = 0.88,
-            font.label = list(size = 12),
+            font.label = list(size = 14),
             ncol = 5,
             nrow = 2) %>% 
   
   annotate_figure(left = text_grob('predicted coyote occurrence',
                                    rot = 90,
-                                   vjust = 0.5),
-                  fig.lab.size = 14)
+                                   vjust = 0.5,
+                                   size = 16))
 
 # 9) export predicted probabilities figure ---------------------------------
 
@@ -744,8 +853,11 @@ vif_plot <-
   # flip x and y axis 
   coord_flip() +
   
+  theme_classic() +
+  
   # specify theme elements
   theme(axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 12),
         legend.position = 'none',
         axis.title.x = element_text(size = 14))
 
