@@ -416,7 +416,7 @@ sum(coyote_data$coyote_pres != 0,
 
 # 10) evaluation by simulation --------------------------------------------
 
-# this section is adapted from Ariel Muldoon's 'Simulate! Simulate!' series (https://aosmith.rbind.io/) and work by Dr Andrew Barnas, with coding help from Andrew (thanks!).
+# this section is adapted from Ariel Muldoon's 'Simulate! Simulate!' series (https://aosmith.rbind.io/) and work by Dr Andrew Barnas, with LOTS of coding help from Andrew (thanks!!).
 
 # step 1: define overall set-up
 n_cts <- 40 # number of cameras per array

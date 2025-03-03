@@ -108,13 +108,8 @@ wide_lf_odds <-
                        'transmission lines')) %>% 
   
   # change label column into a factor for plotting
-  mutate(label = as.factor(label)) %>% 
+  mutate(label = as.factor(label))
   
-  # add column for whether error bars overlap with 1 (for plotting)
-  add_column(overlap = c('N',
-                         'N',
-                         'Y'))
-
 # step 2:
 global_odds <-
   
@@ -146,17 +141,7 @@ global_odds <-
                        'lynx',
                        'fisher')) %>% 
   
-  mutate(label = as.factor(label)) %>% 
-  
-  add_column(overlap = c('N',
-                         'N',
-                         'Y',
-                         'Y',
-                         'Y',
-                         'N',
-                         'N',
-                         'N',
-                         'Y'))
+  mutate(label = as.factor(label))
 
 # 4) odds ratios plot -----------------------------------------------------
 
@@ -165,8 +150,7 @@ odds_plot_1 <-
   
   ggplot(data = wide_lf_odds,
          aes(x = label,
-             y = est,
-             color = overlap)) +
+             y = est)) +
   
   # add line at 1
   geom_hline(yintercept = 1,
@@ -179,10 +163,6 @@ odds_plot_1 <-
   geom_linerange(aes(ymin = lower,
                      ymax = upper),
                  linewidth = 0.5) +
-  
-  # set colour based on whether error bars overlap with 1
-  scale_color_manual(values = c('black', 'grey70' ),
-                     labels = c('N', 'Y')) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
@@ -219,8 +199,7 @@ odds_plot_2 <-
                                       'white-tailed deer',
                                       'moose')),
          aes(x = label,
-             y = est,
-             color = overlap)) +
+             y = est)) +
 
   # add background for landscape covariates
   annotate('rect',
@@ -260,10 +239,6 @@ odds_plot_2 <-
   geom_linerange(aes(ymin = lower,
                      ymax = upper),
                  linewidth = 0.5) +
-  
-  # set colour based on whether error bars overlap with 1
-  scale_color_manual(values = c('black', 'grey70' ),
-                     labels = c('N', 'Y')) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
