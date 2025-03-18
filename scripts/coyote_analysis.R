@@ -686,6 +686,26 @@ coyote_glmm_sim = function(n_cts = 40,
   
   absent <- total_trials - present
   
+  # wrap everything into the dataframe
+  df <- data.frame(ct,
+                   array,
+                   array_effect,
+                   sim_nat_land,
+                   sim_wide_lf,
+                   sim_wtd,
+                   sim_moose,
+                   sim_squirrel,
+                   sim_hare,
+                   sim_wolf,
+                   sim_lynx,
+                   sim_fisher,
+                   linear_pred,
+                   prob,
+                   total_trials,
+                   present,
+                   absent)
+  
+  
   # fit GLMM to simulated data
   glmm <- glmer(
     cbind(present, absent) ~
@@ -702,14 +722,46 @@ coyote_glmm_sim = function(n_cts = 40,
     data = df,
     family = binomial)
   
+  #From here 
+  
+  #all the other models
+  #and then model selection
+  
+  #To here
+  
+  
+  
+  
   # list(sim_hsel = sim_hsel,
   #      )
 } 
 
 # replicate function many times
-sims <- replicate(1000,
+sims <- replicate(100,
                  coyote_glmm_sim(),
                  simplify = TRUE)
+
+#extract the model coefficients
+#sims_results <- map_dfr(sims, ~ broom::tidy(.x), .id = "simulation")
+
+sims_results <- sims%>%
+  map_dfr(~broom::tidy(.x), .id = "simulation")
+
+
+#Before plotting, extract TRUTH
+lynx_truth<-as.numeric(broom::tidy(global)%>%filter(term == "scale(lynx)")%>%select(estimate))
+#lynx_truth<-broom::tidy(global)%>%filter(term == "scale(lynx)")%>%select(estimate)
+
+
+
+ggplot(sims_results%>%filter(term == "sim_lynx"), aes(x = estimate))+
+  geom_density(fill = "darkseagreen", alpha = 0.5)+
+  geom_vline(xintercept = lynx_truth, linetype = "dashed")
+
+
+
+
+
 
 # 11) graphing simulation results -----------------------------------------
 
