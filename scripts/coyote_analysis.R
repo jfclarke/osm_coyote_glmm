@@ -14,6 +14,10 @@ library(MuMIn)
 library(purrr)
 library(broom.mixed)
 library(car)
+library(ggplot2)
+library(cowplot)
+library(ggpubr)
+library(broom.mixed)
 
 # 2) data import ----------------------------------------------------------
 
@@ -567,7 +571,7 @@ df <- data.frame(ct,
                  absent)
 
 # fit GLMM to simulated data
-glmm <- glmer(
+sim_global <- glmer(
   cbind(present, absent) ~
     sim_nat_land +
     sim_wide_lf +
@@ -582,11 +586,12 @@ glmm <- glmer(
   data = df,
   family = binomial)
 
-summary(glmm)
+summary(sim_global)
 
-# OK!! now everything looks good and works as it should - wrap into a function so can simulate heaps of times
+# OK!! now everything looks good and works as it should!
+# wrap everything above into a function so we can simulate heaps of times
 
-# data-generating function
+# data-generation, modelling and model selection function
 coyote_glmm_sim = function(n_cts = 40,
                            n_arrays = 6,
                            n_obs = 1,
@@ -606,7 +611,7 @@ coyote_glmm_sim = function(n_cts = 40,
   ct <- rep(1:(n_cts * n_arrays),
             each = n_obs)
   
-  array <-rep (1:n_arrays,
+  array <- rep (1:n_arrays,
                each = n_cts * n_obs) %>% 
     as.factor()
   
@@ -705,9 +710,8 @@ coyote_glmm_sim = function(n_cts = 40,
                    present,
                    absent)
   
-  
-  # fit GLMM to simulated data
-  glmm <- glmer(
+  # fit GLMMs to simulated data
+  sim_global <- glmer(
     cbind(present, absent) ~
       sim_nat_land +
       sim_wide_lf +
@@ -721,56 +725,430 @@ coyote_glmm_sim = function(n_cts = 40,
       (1|array),
     data = df,
     family = binomial)
+ 
+  sim_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      (1|array),
+    data = df,
+    family = binomial)
   
-  #From here 
+  sim_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      (1|array),
+    data = df,
+    family = binomial)
   
-  #all the other models
-  #and then model selection
+  sim_prey <- glmer(
+    cbind(present, absent) ~
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
   
-  #To here
+  sim_prey_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
   
+  sim_comp <- glmer(
+    cbind(present, absent) ~
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
   
+  sim_comp_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
   
+  sim_prey_wide <- glmer(
+    cbind(present, absent) ~
+      sim_wide_lf +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
   
-  # list(sim_hsel = sim_hsel,
-  #      )
+  sim_comp_wide <- glmer(
+    cbind(present, absent) ~
+      sim_wide_lf +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+    
+  sim_comp_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_global_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_hare +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_int <- glmer(
+      cbind(present, absent) ~
+        sim_wtd +
+        sim_moose +
+        sim_squirrel +
+        sim_wide_lf * sim_hare +
+        (1|array),
+      data = df,
+      family = binomial)
+  
+  sim_comp_int <- glmer(
+    cbind(present, absent) ~
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+
+  sim_prey_lc_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_wide_lf * sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+    
+  sim_comp_lc_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_hsel <- model.sel(null,
+                        sim_global,
+                        sim_lc,
+                        sim_wide_lc,
+                        sim_prey,
+                        sim_prey_lc,
+                        sim_comp,
+                        sim_comp_lc,
+                        sim_prey_wide,
+                        sim_comp_wide,
+                        sim_prey_wide_lc,
+                        sim_comp_wide_lc,
+                        sim_global_int,
+                        sim_prey_int,
+                        sim_comp_int,
+                        sim_prey_lc_int,
+                        sim_comp_lc_int)
 } 
 
 # replicate function many times
-sims <- replicate(100,
+glmm_sim <- replicate(5,
                  coyote_glmm_sim(),
-                 simplify = TRUE)
+                 simplify = FALSE)
 
-#extract the model coefficients
-#sims_results <- map_dfr(sims, ~ broom::tidy(.x), .id = "simulation")
-
-sims_results <- sims%>%
-  map_dfr(~broom::tidy(.x), .id = "simulation")
-
-
-#Before plotting, extract TRUTH
-lynx_truth<-as.numeric(broom::tidy(global)%>%filter(term == "scale(lynx)")%>%select(estimate))
-#lynx_truth<-broom::tidy(global)%>%filter(term == "scale(lynx)")%>%select(estimate)
-
-
-
-ggplot(sims_results%>%filter(term == "sim_lynx"), aes(x = estimate))+
-  geom_density(fill = "darkseagreen", alpha = 0.5)+
-  geom_vline(xintercept = lynx_truth, linetype = "dashed")
-
-
-
-
-
+# extract model coefficients
+sim_results <- 
+  
+  glmm_sim %>%
+  
+  map_dfr(~ tidy(.x),
+          .id = "simulation")
 
 # 11) graphing simulation results -----------------------------------------
 
-# density plots for predictor variables
+# before plotting, extract 'true' parameter values
+nat_land_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(nat_land)') %>% 
+    select(estimate))
 
-# natural landcover
-d_nat_land <-
+wide_linear_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(wide_linear)') %>% 
+    select(estimate))
+
+fisher_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(fisher') %>% 
+    select(estimate))
+
+lynx_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(lynx)') %>% 
+    select(estimate))
+
+grey_wolf_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(grey_wolf') %>% 
+    select(estimate))
+
+red_squirrel_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(red_squirrel') %>% 
+    select(estimate))
+
+snowshoe_hare_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(snowshoe_hare') %>% 
+    select(estimate))
+
+white_tailed_deer_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(white_tailed_deer') %>% 
+    select(estimate))
+
+moose_truth <- as.numeric(
+  broom::tidy(global) %>% 
+    filter(term == 'scale(moose') %>% 
+    select(estimate))
+
+# also: set ggplot theme
+theme_set(theme_classic())
+
+# plotting the spread of simulated parameter estimates
+d_nat_land <- 
   
-  sims %>% 
+  ggplot(sim_results %>%
+           filter(term == "sim_nat_land"),
+         aes(x = estimate)) +
   
-  filter(sim_nat_land)
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = nat_land_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_wide_lf <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_wide_lf"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = wide_linear_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_fisher <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_fisher"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_lynx <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_lynx"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = lynx_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_wolf <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_wolf"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = grey_wolf_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_squirrel <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_squirrel"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = red_squirrel_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_hare <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_hare"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_wtd <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_wtd"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = white_tailed_deer_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+d_moose <- 
+  
+  ggplot(sim_results %>%
+           filter(term == "sim_moose"),
+         aes(x = estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = moose_truth, linetype = "dashed") +
+  
+  scale_x_continuous(expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ')
+
+# arrange into a single panel
+d_plot <-
+  
+  ggarrange(d_nat_land,
+            d_wide_lf,
+            d_fisher,
+            d_lynx,
+            d_wolf,
+            d_squirrel,
+            d_hare,
+            d_wtd,
+            d_moose,
+            labels = ,
+            label.x = 0.88,
+            font.label = list(size = 14),
+            ncol = 5,
+            nrow = 2) %>% 
+  
+  annotate_figure(left = text_grob('density',
+                                   rot = 90,
+                                   vjust = 0.5,
+                                   size = 16)) %>% 
+  
+  annotate_figure(bottom = text_grob('beta coefficient estimate',
+                                     hjust = 0.5,
+                                     size = 16))
 
