@@ -18,6 +18,7 @@ library(ggplot2)
 library(cowplot)
 library(ggpubr)
 library(broom.mixed)
+library(insight)
 
 # 2) data import ----------------------------------------------------------
 
@@ -896,10 +897,26 @@ coyote_glmm_sim = function(n_cts = 40,
                         sim_comp_int,
                         sim_prey_lc_int,
                         sim_comp_lc_int)
+  
+  # returns parameter name and beta coefficient for the global model
+  sim_pars <- get_parameters(sim_global)
+  
+  # transforms sim_hsel into a tibble with models as rownames and extracts the top model
+  top_mod <-  sim_hsel %>% 
+    
+    as_tibble(rownames = 'model') %>%
+    
+    select(model) %>% 
+    
+    slice(1)
+  
+  # return just the bits we want
+  return(list(sim_pars,
+              top_mod))
 } 
 
 # replicate function many times
-glmm_sim <- replicate(5,
+glmm_sim <- replicate(1000,
                  coyote_glmm_sim(),
                  simplify = FALSE)
 
@@ -908,66 +925,68 @@ sim_results <-
   
   glmm_sim %>%
   
-  map_dfr(~ tidy(.x),
-          .id = "simulation")
+  map_dfr(bind_rows,
+          .id = 'simulation')
 
 # 11) graphing simulation results -----------------------------------------
 
+# A) density plots of simulated model parameters
+
 # before plotting, extract 'true' parameter values
-nat_land_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(nat_land)') %>% 
-    select(estimate))
+nat_land_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(nat_land)') %>% 
+  pull(Estimate)
 
-wide_linear_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(wide_linear)') %>% 
-    select(estimate))
+wide_linear_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(wide_linear)') %>% 
+  pull(Estimate)
 
-fisher_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(fisher') %>% 
-    select(estimate))
+fisher_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(fisher)') %>% 
+  pull(Estimate)
 
-lynx_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(lynx)') %>% 
-    select(estimate))
+lynx_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(lynx)') %>% 
+  pull(Estimate)
 
-grey_wolf_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(grey_wolf') %>% 
-    select(estimate))
+grey_wolf_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(grey_wolf)') %>% 
+  pull(Estimate)
 
-red_squirrel_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(red_squirrel') %>% 
-    select(estimate))
+red_squirrel_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(red_squirrel)') %>% 
+  pull(Estimate)
 
-snowshoe_hare_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(snowshoe_hare') %>% 
-    select(estimate))
+snowshoe_hare_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(snowshoe_hare)') %>% 
+  pull(Estimate)
 
-white_tailed_deer_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(white_tailed_deer') %>% 
-    select(estimate))
+white_tailed_deer_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(white_tailed_deer)') %>% 
+  pull(Estimate)
 
-moose_truth <- as.numeric(
-  broom::tidy(global) %>% 
-    filter(term == 'scale(moose') %>% 
-    select(estimate))
+moose_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(moose)') %>% 
+  pull(Estimate)
 
-# also: set ggplot theme
+# set ggplot theme
 theme_set(theme_classic())
 
-# plotting the spread of simulated parameter estimates
+# plot the spread of simulated parameter estimates
 d_nat_land <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_nat_land"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_nat_land"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "darkseagreen", alpha = 0.4) +
   
@@ -979,13 +998,18 @@ d_nat_land <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('natural land') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_wide_lf <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_wide_lf"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_wide_lf"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "darkseagreen", alpha = 0.4) +
   
@@ -997,13 +1021,18 @@ d_wide_lf <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('wide LF') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_fisher <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_fisher"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_fisher"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "lightsteelblue1", alpha = 0.4) +
   
@@ -1015,13 +1044,18 @@ d_fisher <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('fisher') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_lynx <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_lynx"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_lynx"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "lightsteelblue1", alpha = 0.4) +
   
@@ -1033,13 +1067,18 @@ d_lynx <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('lynx') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_wolf <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_wolf"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_wolf"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "lightsteelblue1", alpha = 0.4) +
   
@@ -1051,13 +1090,18 @@ d_wolf <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('wolf') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_squirrel <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_squirrel"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_squirrel"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "tomato", alpha = 0.4) +
   
@@ -1069,17 +1113,22 @@ d_squirrel <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('squirrel') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_hare <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_hare"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_hare"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "tomato", alpha = 0.4) +
   
-  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  geom_vline(xintercept = snowshoe_hare_truth, linetype = "dashed") +
   
   scale_x_continuous(expand = c(0, 0)) +
   
@@ -1087,13 +1136,18 @@ d_hare <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('hare') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_wtd <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_wtd"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_wtd"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "tomato", alpha = 0.4) +
   
@@ -1105,13 +1159,18 @@ d_wtd <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab(' ') +
+  
+  ggtitle('deer') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
 d_moose <- 
   
   ggplot(sim_results %>%
-           filter(term == "sim_moose"),
-         aes(x = estimate)) +
+           filter(Parameter == "sim_moose"),
+         aes(x = Estimate)) +
   
   geom_density(fill = "tomato", alpha = 0.4) +
   
@@ -1123,9 +1182,14 @@ d_moose <-
   
   xlab(' ') +
   
-  ylab(' ')
+  ylab('') +
+  
+  ggtitle('moose') +
+  
+  theme(plot.title = element_text(hjust = 0.5,
+                                  size = 14))
 
-# arrange into a single panel
+# arrange density plots into a single panel
 d_plot <-
   
   ggarrange(d_nat_land,
@@ -1152,3 +1216,14 @@ d_plot <-
                                      hjust = 0.5,
                                      size = 16))
 
+# B) bar graph of simulated model selection outcomes
+
+sel_plot <-
+  
+  ggplot(sim_results %>% 
+           select(model) %>% 
+           na.omit(),
+         aes(x = model,
+             fill = model)) +
+  
+  geom_bar()
