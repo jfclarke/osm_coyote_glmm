@@ -992,7 +992,9 @@ d_nat_land <-
   
   geom_vline(xintercept = nat_land_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1002,7 +1004,8 @@ d_nat_land <-
   
   ggtitle('natural land') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_wide_lf <- 
@@ -1015,7 +1018,9 @@ d_wide_lf <-
   
   geom_vline(xintercept = wide_linear_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1025,7 +1030,8 @@ d_wide_lf <-
   
   ggtitle('wide LF') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_fisher <- 
@@ -1038,7 +1044,9 @@ d_fisher <-
   
   geom_vline(xintercept = fisher_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1048,7 +1056,8 @@ d_fisher <-
   
   ggtitle('fisher') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_lynx <- 
@@ -1061,7 +1070,9 @@ d_lynx <-
   
   geom_vline(xintercept = lynx_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1071,7 +1082,8 @@ d_lynx <-
   
   ggtitle('lynx') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_wolf <- 
@@ -1084,7 +1096,9 @@ d_wolf <-
   
   geom_vline(xintercept = grey_wolf_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1094,7 +1108,8 @@ d_wolf <-
   
   ggtitle('wolf') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_squirrel <- 
@@ -1107,7 +1122,9 @@ d_squirrel <-
   
   geom_vline(xintercept = red_squirrel_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1117,7 +1134,8 @@ d_squirrel <-
   
   ggtitle('squirrel') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_hare <- 
@@ -1130,7 +1148,9 @@ d_hare <-
   
   geom_vline(xintercept = snowshoe_hare_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1140,7 +1160,8 @@ d_hare <-
   
   ggtitle('hare') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_wtd <- 
@@ -1153,7 +1174,9 @@ d_wtd <-
   
   geom_vline(xintercept = white_tailed_deer_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1163,7 +1186,8 @@ d_wtd <-
   
   ggtitle('deer') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 d_moose <- 
@@ -1176,7 +1200,9 @@ d_moose <-
   
   geom_vline(xintercept = moose_truth, linetype = "dashed") +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
   
@@ -1186,7 +1212,8 @@ d_moose <-
   
   ggtitle('moose') +
   
-  theme(plot.title = element_text(hjust = 0.5,
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
                                   size = 14))
 
 # arrange density plots into a single panel
@@ -1201,9 +1228,9 @@ d_plot <-
             d_hare,
             d_wtd,
             d_moose,
-            labels = ,
+            labels = NULL,
             label.x = 0.88,
-            font.label = list(size = 14),
+            font.label = list(size = 16),
             ncol = 5,
             nrow = 2) %>% 
   
@@ -1214,7 +1241,15 @@ d_plot <-
   
   annotate_figure(bottom = text_grob('beta coefficient estimate',
                                      hjust = 0.5,
-                                     size = 16))
+                                     size = 18))
+# save panel plot
+ggsave('simulated_parameters_panel.png',
+       d_plot,
+       path = 'figures',
+       width = 250,
+       height = 100,
+       units = 'mm',
+       bg = 'white')
 
 # B) bar graph of simulated model selection outcomes
 
@@ -1223,7 +1258,25 @@ sel_plot <-
   ggplot(sim_results %>% 
            select(model) %>% 
            na.omit(),
-         aes(x = model,
-             fill = model)) +
+         aes(x = model)) +
   
-  geom_bar()
+  geom_bar(fill = 'darkgrey') +
+  
+  scale_x_discrete(labels = c ("sim_global" = "global", "sim_global_int" = "global interaction")) +
+  
+  scale_y_continuous(limits = c(0, 890),
+                   breaks = seq(0, 880, by = 200),
+                   expand = c(0, 0)) +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16))
+
+# save plot
+ggsave('simulated_top_models.png',
+       sel_plot,
+       path = 'figures',
+       width = 150,
+       height = 100,
+       units = 'mm',
+       bg = 'white')

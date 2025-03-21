@@ -152,9 +152,14 @@ odds_plot_1 <-
          aes(x = label,
              y = est)) +
   
+  scale_y_continuous(limits = c(0.75, 2.15),
+                     breaks = seq(0.8, 2.15, by = 0.2),
+                     expand = c(0, 0)) +
+  
   # add line at 1
   geom_hline(yintercept = 1,
-             alpha = 0.7) +
+             alpha = 0.7,
+             linetype = 'dashed') +
   
   # add points for estimates
   geom_point(size = 3) +
@@ -230,7 +235,8 @@ odds_plot_2 <-
   
   # add line at 1
   geom_hline(yintercept = 1,
-             alpha = 0.7) +
+             alpha = 0.7,
+             linetype = 'dashed') +
   
   # add points for estimates
   geom_point(size = 3) +
@@ -355,7 +361,7 @@ plot_nat_land <-
               fill = 'darkseagreen',
               alpha = 0.4) +
   
-  scale_x_continuous(limits = c(0.7, 1),
+  scale_x_continuous(limits = c(0.7, 1.01),
                      breaks = seq(0.7, 1, by = 0.1),
                      expand = c(0, 0)) +
   
@@ -363,13 +369,13 @@ plot_nat_land <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('prop natural land') +
+  xlab('natural land') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 
 # plot predicted probability of coyote occurence given proportion of wide linear features
@@ -393,13 +399,13 @@ plot_wide_linear <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('prop wide LFs') +
+  xlab('wide LFs') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 
 # plot predicted probability of coyote occurrence given total independent moose detections
@@ -423,13 +429,13 @@ plot_moose <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('moose detections') +
+  xlab('moose') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add moose silhouette
@@ -452,7 +458,7 @@ plot_red_squirrel <-
               fill = 'tomato',
               alpha = 0.2) +
   
-  scale_x_continuous(limits = c(0, 150),
+  scale_x_continuous(limits = c(0, 153),
                      breaks = seq(0, 150, by = 50),
                      expand = c(0, 0),
                      labels = label_wrap(10)) +
@@ -461,13 +467,13 @@ plot_red_squirrel <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('squirrel detections') +
+  xlab('squirrel') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add squirrel silhouette
@@ -497,13 +503,13 @@ plot_snowshoe_hare <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('hare detections') +
+  xlab('hare') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add hare silhouette
@@ -535,13 +541,13 @@ plot_white_tailed_deer <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('deer detections') +
+  xlab('deer') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add deer silhouette
@@ -573,13 +579,13 @@ plot_fisher <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('fisher detections') +
+  xlab('fisher') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add fisher silhouette
@@ -611,13 +617,13 @@ plot_grey_wolf <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('wolf detections') +
+  xlab('wolf') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add wolf silhouette
@@ -647,13 +653,13 @@ plot_lynx <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('lynx detections') +
+  xlab('lynx') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 14),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add lynx silhouette
