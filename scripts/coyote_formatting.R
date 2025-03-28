@@ -2,8 +2,6 @@
 # author: Jamie Clarke
 # adapted from code written by Larissa Bron
 
-# last updated: November 15 2024
-
 # 1) set-up ---------------------------------------------------------------
 
 # load in relevant packages
@@ -125,7 +123,7 @@ rm(coyote_det,
 # 3) data exploration -----------------------------------------------------
 
 # check histograms for each covariate of interest
-# looking for very left-skewed, zero-inflated plots that indicate little presence on the lansdscape (for modelling)
+# looking for very left-skewed, zero-inflated plots that indicate little presence on the landscape (for modelling)
 hist(coyote_data$nat_land)
 hist(coyote_data$pipeline)
 hist(coyote_data$roads)

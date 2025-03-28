@@ -8,7 +8,7 @@ This repository contains data, R scripts/outputs and other things needed for the
 **Project Information:** Information on the Oil Sands Monitoring Program can be found [here](https://open.alberta.ca/publications/9781460151341). Additional information on the Applied Conservation Macro Ecology (ACME) Lab's oil sands monitoring work can be found [here](http://www.acmelab.ca/dataportal.html#Boreal).
 
 **Author Information (data):**  
-    Principal Investigator: Dr. Jason T Fisher  
+    Principal Investigators: Dr. Jason T Fisher  
 		Institution: University of Victoria  
 		Address: 3800 Finnerty Rd, Victoria, BC V8P 5C2  
 		Email: [fisherj@uvic.ca](mailto::email)
@@ -28,9 +28,9 @@ This repository contains data, R scripts/outputs and other things needed for the
 
 ### SHARING/ACCESS INFORMATION
 
-**Recommended Citation for Manuscript:** Clarke, J., M. A. Dyck, L. Bron, M. Carlson, S. Labiy, Z. Penno, H. Webster, and J. T. Fisher. In prep. *Energy infrastructure clears the way for coyotes in Alberta’s oil sands*.
+**Recommended Citation for Manuscript:** Clarke, J. F., L. Bron, M. Carlson, S. Labiy, Z. Penno, H. Webster, J. T. Fisher, and M. A. Dyck. In prep. *Energy infrastructure clears the way for coyotes in Alberta’s oil sands*.
 
-**Project Funders:** This research was funded by the Oil Sands Monitoring Program. It was a product of the program, but does not necessarily represent its views.
+**Project Funders:** This research was funded by the Oil Sands Monitoring Program. It is a product of the program, but does not necessarily represent its views.
 
 <hr>
 

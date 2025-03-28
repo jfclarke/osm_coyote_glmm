@@ -1,20 +1,24 @@
 ---
-title: "coyote_analysis script"
-author: "authors: Jamie Clarke, Marissa Dyck, Larissa Bron, Madison Carlson, Sophia Labiy, Zoe Penno, Hayley Webster, Jason T Fisher"
-date: "last updated: 30/12/2024"
-output: html_document
+title: '**coyote_analysis**'
+author: 'Jamie Clarke'
+date: 'last updated: 26/03/2025'
+fontsize: 12pt
+mainfont: Helvetica
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## about
-This is walk-through on how to analyze data for *the coyote manuscript*. It was written by Jamie Clarke with help from Dr. Marissa Dyck. Before running this script, you will need to format the data using the coyote_formatting script. Happy analyzing :-)
+# about
+This is a data analysis code walk-through for the manuscript *Energy infrastructure clears the way for coyotes in Alberta's oil sands*. It was written by Jamie F Clarke with help from Marissa A Dyck, and based on preliminary scripts by Larissa Bron. Before running this script, you will need to format the data using the coyote_formatting script. Happy analyzing :-)
 
-## 1) set-up
+# set-up
 
-#### start by loading in relevant packages:
+start by loading in relevant packages:
 ```{r packages, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(PerformanceAnalytics)
@@ -23,20 +27,25 @@ library(MuMIn)
 library(purrr)
 library(broom.mixed)
 library(car)
+library(ggplot2)
+library(cowplot)
+library(ggpubr)
+library(broom.mixed)
+library(insight)
 ```
 
-## 2) data import
+# data import
 
-#### read in processed data (created using coyote_formatting script):
+read in processed data (created using coyote_formatting script):
 ```{r coyote_data, message=FALSE}
 coyote_data <-
   
   read_csv('data/processed/coyote_data.csv')
 ```
 
-## 3) linear feature model set
+# linear feature model set
 
-#### <span style="color: darkblue;">step 1:</span> doing some exploratory analyses to decide which linear features to include in further models
+**\textcolor{blue}{step 1:} doing some exploratory analyses to decide which linear features to include in further models**
 
 H0: null model
 ```{r null, message=FALSE}
@@ -77,7 +86,7 @@ pipeline_lf <-
     family = binomial)
 ```
 
-H3: narrow linear features (~5 m wide)
+H3: narrow linear features (~ 5 m wide)
 ```{r narrow_lf, message=FALSE}
 narrow_lf <-
   
@@ -90,7 +99,7 @@ narrow_lf <-
   family = binomial)
 ```
 
-H4: wide linear features (>5 m wide)
+H4: wide linear features (> 5 m wide)
 ```{r wide_lf, message=FALSE}
 wide_lf <-
   
@@ -131,7 +140,7 @@ unveg_lf <-
     family = binomial)
 ```
   
-## 4) linear feature model selection
+# linear feature model selection
 ```{r lf_sel}
 lf_sel <-
   
@@ -148,10 +157,10 @@ lf_sel
 ```
    
 result:  
-- wide_lf model best-supported by delta > 2.00  
-- global_lf model second-best supported
+-   wide_lf model best-supported by delta > 2.00  
+-   global_lf model second-best supported
 
-## 5) creating a wide linear feature variable
+# creating a wide linear feature variable
 ```{r wide_linear}
 coyote_data <-
   
@@ -163,9 +172,9 @@ coyote_data <-
            transmission_lines)
 ```
 
-## 6) hypothesis-testing model set
+# hypothesis-testing model set
 
-#### <span style="color: darkblue;">step 2:</span> test hypotheses using wide_linear variable
+**\textcolor{blue}{step 2:} test hypotheses using wide_linear variable**  
 
 H1: global model (natural landcover, wide linear features, all mammals)
 ```{r global, message=FALSE}
@@ -415,11 +424,9 @@ comp_lc_int <-
     family = binomial)
 ```
 
-## 7) comparing fixed vs random effects
+# comparing fixed vs random effects
 
-#### testing an example model (global) with a random effect for array against the same model without a random effect (i.e., a fixed effect global model)
-
-#### first: run the fixed effect global model
+testing an example model (global) with a random effect for array against the same model without a random effect (i.e., a fixed effect global model)  
 
 H17: fixed effect global model (natural landcover, wide linear features, all mammals) without random effect
 ```{r fe_global, message=FALSE}
@@ -440,15 +447,15 @@ fe_global <-
     family = binomial)
 ```
 
-#### then, run model selection:
+run model selection:
 ```{r fe_re_sel}
 model.sel(global,
           fe_global)
 ```
   
-result: random effects model best-supported
+result: random effects model best-supported, carry that forward
 
-## 8) hypothesis-testing model selection
+# hypothesis-testing model selection
 ```{r h_sel}
 h_sel <-
   
@@ -475,12 +482,12 @@ h_sel
 ```
   
 result:  
-- global model best supported by delta > 2.00  
-- global_int model second-best supported
+-   global model best supported by delta > 2.00  
+-   global_int model second-best supported
 
-## 9) detection data
+# detection data summaries
 
-#### sum the number of independent detections of each focal species using purrr:
+sum the number of independent detections of each focal species using `purrr`:
 ```{r sum_ind_det}
 coyote_data %>% 
   
@@ -489,8 +496,375 @@ coyote_data %>%
   map_dbl(sum) # sum down each column
 ```
 
-#### count the number of camera stations where coyotes were detected:
+count the number of camera stations where coyotes were detected:
 ```{r coyote_pres}
 sum(coyote_data$coyote_pres != 0,
     na.rm = TRUE)
 ```
+
+# evaluation by simulation
+
+this section is adapted from [Ariel Muldoon's 'Simulate! Simulate!' series](https://aosmith.rbind.io/) and work by Dr Andrew Barnas, with heaps of coding help from Andrew (thank you!)  
+
+create a data-generating, modelling and model-selecting function:
+```{r sim_fun, message=FALSE}
+
+coyote_glmm_sim = function(n_cts = 40, # approximate number of cameras/array
+                           n_arrays = 6, # number of arrays
+                           n_obs = 1, # number of years cameras were deployed
+                           n = n_cts * n_arrays * n_obs, # total observations
+                           b0 = -1.4, # intercept value from global model
+                           b1 = -0.40, # slope coefficient for nat_land
+                           b2 = 0.50, # slope coefficient for wide_linear
+                           b3 = 0.06, # slope coefficient for deer
+                           b4 = -0.06, # slope coefficient for moose
+                           b5 = 0.08, # slope coefficient for squirrels
+                           b6 = 0.19, # slope coefficient for hares
+                           b7 = 0.19, # slope coefficient for wolves
+                           b8 = 0.17, # slope coefficient for lynx
+                           b9 = 0.02, # slope coefficient for fishers
+                           array_sd = 0.28)
+{
+  # assign camera and array IDs
+  ct <- rep(1:(n_cts * n_arrays),
+            each = n_obs)
+  
+  array <- rep (1:n_arrays,
+               each = n_cts * n_obs) %>% 
+    as.factor()
+  
+  # simulate 'collected' data
+  # for landscape data: proportional coverage ranges from 0 to 1
+  sim_nat_land <- rep(runif(n_cts * n_arrays,
+                            min = 0,
+                            max = 1), # uniform draws from 0 to 1
+                      each = n_obs) 
+  
+  sim_wide_lf <- rep(runif(n_cts * n_arrays,
+                           min = 0,
+                           max = 1), # uniform draws from 0 to 1
+                     each = n_obs)
+  
+  # for independent detection data: number of detections ranges from scaled min to max, from actual data
+  sim_wtd <- rep(runif(n_cts * n_arrays,
+                       min = min(scale(coyote_data$white_tailed_deer)),
+                       max = max(scale(coyote_data$white_tailed_deer))),
+                 each = n_obs)
+  
+  sim_moose <- rep(runif(n_cts * n_arrays,
+                         min = min(scale(coyote_data$moose)),
+                         max = max(scale(coyote_data$moose))),
+                   each = n_obs)
+  
+  sim_squirrel <- rep(runif(n_cts * n_arrays,
+                            min = min(scale(coyote_data$red_squirrel)),
+                            max = max(scale(coyote_data$red_squirrel))),
+                      each = n_obs)
+  
+  sim_hare <- rep(runif(n_cts * n_arrays,
+                        min = min(scale(coyote_data$snowshoe_hare)),
+                        max = max(scale(coyote_data$snowshoe_hare))),
+                  each = n_obs)
+  
+  sim_wolf <- rep(runif(n_cts * n_arrays,
+                        min = min(scale(coyote_data$grey_wolf)),
+                        max = max(scale(coyote_data$grey_wolf))),
+                  each = n_obs)
+  
+  sim_lynx <- rep(runif(n_cts * n_arrays,
+                        min = min(scale(coyote_data$lynx)),
+                        max = max(scale(coyote_data$lynx))),
+                  each = n_obs)
+  
+  sim_fisher <- rep(runif(n_cts * n_arrays,
+                          min = min(scale(coyote_data$fisher)),
+                          max = max(scale(coyote_data$fisher))),
+                    each = n_obs)
+  
+  # simulate random effect of array
+  array_effect <- rep(rnorm(n_arrays,
+                            mean = 0,
+                            sd = array_sd),
+                      each = n_cts * n_obs)
+  
+  # calculate the linear predictor for each observation
+  linear_pred <-
+    
+    b0 +
+    b1 * sim_nat_land +
+    b2 * sim_wide_lf +
+    b3 * sim_wtd +
+    b4 * sim_moose +
+    b5 * sim_squirrel +
+    b6 * sim_hare +
+    b7 * sim_wolf +
+    b8 * sim_lynx +
+    b9 * sim_fisher +
+    array_effect
+  
+  # convert linear predictors to probabilities, using logit link function
+  prob <- plogis(linear_pred)
+  
+  # simulate Bernoulli trials based on probabilities, with variable effort per camera
+  # 4-15 sampling opportunities (= months) per trial - min/max deployment durations where camera active
+  total_trials <- sample(4:15,
+                         n,
+                         replace = TRUE)
+  
+  # use random number generator to determine number of successes (presences) and failures (absences)
+  # run as many times as observations in dataset
+  present <- rbinom(n,
+                    size = total_trials,
+                    prob = prob)
+  
+  absent <- total_trials - present
+  
+  # wrap everything into dataframe
+  df <- data.frame(ct,
+                   array,
+                   array_effect,
+                   sim_nat_land,
+                   sim_wide_lf,
+                   sim_wtd,
+                   sim_moose,
+                   sim_squirrel,
+                   sim_hare,
+                   sim_wolf,
+                   sim_lynx,
+                   sim_fisher,
+                   linear_pred,
+                   prob,
+                   total_trials,
+                   present,
+                   absent)
+  
+  # fit GLMMs to simulated data
+  sim_global <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+ 
+  sim_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey <- glmer(
+    cbind(present, absent) ~
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_comp <- glmer(
+    cbind(present, absent) ~
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_comp_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_wide <- glmer(
+    cbind(present, absent) ~
+      sim_wide_lf +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_comp_wide <- glmer(
+    cbind(present, absent) ~
+      sim_wide_lf +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+    
+  sim_comp_wide_lc <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wide_lf +
+      sim_wolf +
+      sim_lynx +
+      sim_fisher +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_global_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_hare +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_prey_int <- glmer(
+      cbind(present, absent) ~
+        sim_wtd +
+        sim_moose +
+        sim_squirrel +
+        sim_wide_lf * sim_hare +
+        (1|array),
+      data = df,
+      family = binomial)
+  
+  sim_comp_int <- glmer(
+    cbind(present, absent) ~
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+
+  sim_prey_lc_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_wtd +
+      sim_moose +
+      sim_squirrel +
+      sim_wide_lf * sim_hare +
+      (1|array),
+    data = df,
+    family = binomial)
+    
+  sim_comp_lc_int <- glmer(
+    cbind(present, absent) ~
+      sim_nat_land +
+      sim_lynx +
+      sim_fisher +
+      sim_wide_lf * sim_wolf +
+      (1|array),
+    data = df,
+    family = binomial)
+  
+  sim_hsel <- model.sel(null,
+                        sim_global,
+                        sim_lc,
+                        sim_wide_lc,
+                        sim_prey,
+                        sim_prey_lc,
+                        sim_comp,
+                        sim_comp_lc,
+                        sim_prey_wide,
+                        sim_comp_wide,
+                        sim_prey_wide_lc,
+                        sim_comp_wide_lc,
+                        sim_global_int,
+                        sim_prey_int,
+                        sim_comp_int,
+                        sim_prey_lc_int,
+                        sim_comp_lc_int)
+  
+  # return parameter name and beta coefficient for global model
+  sim_pars <- get_parameters(sim_global)
+  
+  # transform sim_hsel into a tibble with models as rownames
+  # extract top model
+  top_mod <-  sim_hsel %>% 
+    
+    as_tibble(rownames = 'model') %>%
+    
+    select(model) %>% 
+    
+    slice(1)
+  
+  # return just the bits we want
+  return(list(sim_pars,
+              top_mod))
+} 
+```
+
+repeat the simulation for many iterations (in this case, 1,000):
+```{r sim, eval=FALSE}
+glmm_sim <- replicate(1000,
+                 coyote_glmm_sim(),
+                 simplify = FALSE)
+```
+
+extract model coefficients:
+```{r sim_results, eval=FALSE}
+sim_results <- glmm_sim %>%
+  
+  map_dfr(bind_rows,
+          .id = 'simulation')
+
+# run sim_results to see output
+sim_results
+```
+
+# save simulation results as .csv in 'processed' data folder:
+```{r save_sim, eval=FALSE}
+write_csv(sim_results,
+          'data/processed/simulation_output.csv')
+```
+

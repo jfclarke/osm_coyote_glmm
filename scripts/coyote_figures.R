@@ -23,6 +23,7 @@ library(scales)
 library(rphylopic)
 library(MuMIn)
 library(car)
+library(readr)
 
 # set ggplot theme
 theme_set(theme_classic())
@@ -72,7 +73,7 @@ global <-
     data = coyote_data,
     family = binomial)
 
-# 3) calculating odds ratios --------------------------------------------------
+# 3) calculate odds ratios --------------------------------------------------
 
 # step 1:
 wide_lf_odds <-
@@ -143,7 +144,7 @@ global_odds <-
   
   mutate(label = as.factor(label))
 
-# 4) odds ratios plot -----------------------------------------------------
+# 4) odds ratios plots -----------------------------------------------------
 
 # step 1
 odds_plot_1 <-
@@ -282,7 +283,7 @@ ggsave('odds_ratio_h.tiff',
        units = 'mm',
        path = 'figures')
 
-# 6) determining predicted probabilities -----------------------------------------
+# 6) determine predicted probabilities -----------------------------------------
 
 # predicted probabilities given each covariates of interest
 
@@ -726,24 +727,18 @@ re_plot <-
   
   # using colourblind-friendly Tol colour scheme
   # more info at https://personal.sron.nl/~pault/
-  scale_fill_manual(values = c('#4477AA',
-                               '#66CCEE',
-                               '#228833',
-                               '#CCBB44',
-                               '#EE6677',
-                               '#AA3377')) +
+  scale_fill_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77'),
+                    labels = c('Cold Lake', 'Fort McKay East', 'Grand Rapids South', 'Lac La Biche', 'Grand Rapids North', 'Christina Lake'),
+                    guide = guide_legend(reverse = TRUE)) + # this reverses legend order so colours are ordered nicely
   
   geom_ribbon(aes(fill = group,
                   ymin = conf.low,
                   ymax = conf.high),
               alpha = 0.1) +
   
-  scale_color_manual(values = c('#4477AA',
-                                '#66CCEE',
-                                '#228833',
-                                '#CCBB44',
-                                '#EE6677',
-                                '#AA3377')) +
+  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77'),
+                     labels = c('Cold Lake', 'Fort McKay East', 'Grand Rapids South', 'Lac La Biche', 'Grand Rapids North', 'Christina Lake'),
+                     guide = guide_legend(reverse = TRUE)) +
   
   labs(color = NULL,
        fill = NULL,
@@ -850,7 +845,458 @@ ggsave('vif_plot.png',
        height = 100,
        units = 'mm')
 
-# 12) mapping set-up ----------------------------------------------------------
+# 12) camera operability plots --------------------------------------------
+
+# adapted from Marissa's OSM_2022-2023 folder, script 1 (https://github.com/ACMElabUvic/OSM_2022-2023/tree/main)
+
+# read in deployment data
+deploy <- read_csv('data/raw/OSM_2021_2022_Deployment_Data.csv',
+                    
+                   # specify how to read in columns
+                    col_types = cols(Project.ID = readr::col_factor(),
+                                     Deployment.Location.ID = readr::col_factor(),
+                                     Camera.Deployment.Begin.Date = readr::col_date(
+                                       format = "%d-%b-%y"),
+                                     Camera.Deployment.End.Date = readr::col_date(
+                                       format = "%d-%b-%y"),
+                                     .default = readr::col_character())) %>% 
+  
+  # set the column names to lower case
+  set_names(
+    names(.) %>% 
+      tolower() %>%  
+      
+      # replace the '.' with '_'
+      str_replace_all(pattern = '\\.',
+                      replacement = '_')) %>% 
+  
+  # rename start and end date so they are shorter, rename project_id and deployment_location_id
+  rename(start_date = camera_deployment_begin_date,
+         end_date = camera_deployment_end_date,
+         array = project_id,
+         site = deployment_location_id) %>% 
+  
+  # rename site entries and remove prefix OSM from array
+  
+  mutate(site = as.factor(case_when(site == 'LU15-44' ~ 'LU15_44',
+                                    site == 'LI15_03' ~ 'LU15_03',
+                                    TRUE  ~ site)),
+         array = str_remove(array, 
+                            pattern = "OSM_")) %>% 
+  
+  # remove columns we don't need
+  select(!c(camera_failure_details,
+            deployment_id)) %>% 
+  
+  # remove ABMI sites
+  na.omit()
+
+# calculate number of operational days
+ct_op <- deploy %>% 
+  
+  # first group by site to calculate days camera at each site was operating for
+  group_by(site) %>% 
+  
+  # subtract end date from start date to get total number of days (adding 1 to ensure start and end date included)
+  summarise(days_active = sum(end_date - start_date + 1)) %>% 
+  
+  # sum all the days
+  summarise(total_camera_days = sum(days_active))
+
+# plot camera operability
+# create graph of camera operability
+ct_op_plot <- 
+  
+  ggplot(deploy,
+         aes(color = array)) +
+  
+  #set colour based on covariate type
+  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77'),
+                     labels = c('Cold Lake', 'Fort McKay East', 'Grand Rapids South', 'Lac La Biche', 'Grand Rapids North', 'Christina Lake'),
+                     guide = guide_legend(reverse = TRUE)) + # this reverses legend order so colours are ordered nicely
+  
+  geom_segment(aes(x = start_date, 
+                   xend = end_date,
+                   y = site, 
+                   yend = site),
+               linewidth = 0.8) +
+  
+  xlab('date') +
+  
+  ylab('camera trap site') +
+  
+  theme_classic() +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        legend.title = element_blank())
+
+# save plot
+ggsave('ct_op.png',
+       ct_op_plot,
+       path = 'figures',
+       width = 250,
+       height = 200,
+       units = 'mm')
+
+
+# 13) simulation results --------------------------------------------------
+
+# A) density plots of simulated model parameters
+
+# before plotting, extract 'true' parameter values
+nat_land_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(nat_land)') %>% 
+  pull(Estimate)
+
+wide_linear_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(wide_linear)') %>% 
+  pull(Estimate)
+
+fisher_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(fisher)') %>% 
+  pull(Estimate)
+
+lynx_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(lynx)') %>% 
+  pull(Estimate)
+
+grey_wolf_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(grey_wolf)') %>% 
+  pull(Estimate)
+
+red_squirrel_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(red_squirrel)') %>% 
+  pull(Estimate)
+
+snowshoe_hare_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(snowshoe_hare)') %>% 
+  pull(Estimate)
+
+white_tailed_deer_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(white_tailed_deer)') %>% 
+  pull(Estimate)
+
+moose_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(moose)') %>% 
+  pull(Estimate)
+
+# set ggplot theme
+theme_set(theme_classic())
+
+# plot the spread of simulated parameter estimates
+d_nat_land <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_nat_land"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = nat_land_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('natural land') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wide_lf <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wide_lf"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = wide_linear_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('wide LF') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_fisher <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_fisher"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('fisher') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_lynx <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_lynx"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = lynx_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('lynx') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wolf <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wolf"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = grey_wolf_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('wolf') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_squirrel <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_squirrel"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = red_squirrel_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('squirrel') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_hare <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_hare"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = snowshoe_hare_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('hare') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wtd <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wtd"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = white_tailed_deer_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('deer') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_moose <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_moose"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = moose_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab('') +
+  
+  ggtitle('moose') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+# arrange density plots into a single panel
+d_plot <-
+  
+  ggarrange(d_nat_land,
+            d_wide_lf,
+            d_fisher,
+            d_lynx,
+            d_wolf,
+            d_squirrel,
+            d_hare,
+            d_wtd,
+            d_moose,
+            labels = NULL,
+            label.x = 0.88,
+            font.label = list(size = 16),
+            ncol = 5,
+            nrow = 2) %>% 
+  
+  annotate_figure(left = text_grob('density',
+                                   rot = 90,
+                                   vjust = 0.5,
+                                   size = 18)) %>% 
+  
+  annotate_figure(bottom = text_grob('beta coefficient estimate',
+                                     hjust = 0.5,
+                                     size = 18))
+# save panel plot
+ggsave('simulated_parameters_panel.png',
+       d_plot,
+       path = 'figures',
+       width = 250,
+       height = 100,
+       units = 'mm',
+       bg = 'white')
+
+# B) bar graph of simulated model selection outcomes
+
+sel_plot <-
+  
+  ggplot(sim_results %>% 
+           select(model) %>% 
+           na.omit(),
+         aes(x = model)) +
+  
+  geom_bar(fill = 'darkgrey') +
+  
+  scale_x_discrete(labels = c ("sim_global" = "global", "sim_global_int" = "global interaction")) +
+  
+  scale_y_continuous(limits = c(0, 1000),
+                     breaks = seq(0, 1000, by = 200),
+                     expand = c(0, 0)) +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16))
+
+# save plot
+ggsave('simulated_top_models.png',
+       sel_plot,
+       path = 'figures',
+       width = 150,
+       height = 100,
+       units = 'mm',
+       bg = 'white')
+
+# 13) mapping set-up ----------------------------------------------------------
 
 # A) read in LU polygons where CTs were deployed
 
@@ -928,7 +1374,7 @@ ne_ab_bbox <-
           crs = st_crs(26912))
 
 # G) read in Alberta roads layer
-# source = National Road Network (https://open.canada.ca/data/en/dataset/cb4911f1-89d8-47f0-92e1-2cbfac3d300b/resource/e7fa72ef-92ea-4465-bd8f-9b6b765ae0ec)
+# source = National Road Network (https://open.canada.ca/data/en/dataset/3d282116-e556-400c-9306-ca1a3cada77f)
 roads <- 
   
   st_read('data/spatial/NRN_AB_14_0_ROADSEG.shp') %>% 
@@ -955,7 +1401,7 @@ cities <-
   
   filter(name == 'Fort McMurray')
 
-# 13) map of study area -------
+# 14) map of study area -------
 
 ### first: extend bounding box so map features (e.g., scale bar) don't overlap with map itself
 bbox1 <-  st_bbox(ne_ab_bbox)
@@ -1122,7 +1568,7 @@ inset_map <-
             colour = NA,
             fill = NA))
 
-# 14) export study area map with inset ---------------------------------------------------------------------
+# 15) export study area map with inset ---------------------------------------------------------------------
 
 ggsave('study_area_map.png',
        inset_map,

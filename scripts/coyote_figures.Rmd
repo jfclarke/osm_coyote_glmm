@@ -1,8 +1,12 @@
 ---
-title: "coyote_figures script"
-author: "authors: Jamie Clarke, , Marissa Dyck, Larissa Bron, Madison Carlson, Sophia Labiy, Zoe Penno, Hayley Webster, Jason T Fisher"
-date: "last updated: 30/12/2024"
-output: html_document
+title: '**coyote_figures**'
+author: 'Jamie Clarke'
+date: 'last updated: 26/03/2025'
+fontsize: 12pt
+mainfont: Helvetica
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -10,9 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## about
-This is walk-through on how to make figures and maps for *the coyote manuscript*. It was written by Jamie Clarke with help from Dr. Marissa Dyck. Before running this script, you will need to format and analyze the data using the coyote_formatting and coyote_analysis scripts. The spatial data required to run the script is available on Jamie's GitHub at https://github.com/jfclarke/osm_coyote_glmm, or in the links provided. Happy figure- and map-making :-)
+This is a figure- and map-making code walkthrough for the manuscript *Energy infrastructure clears the way for coyotes in Alberta's oil sands*. It was written by Jamie F Clarke with help from Marissa A Dyck. Before running this script, you will need to format and analyze the data using the coyote_formatting and coyote_analysis scripts. The spatial data required to run the script is available on [Jamie's GitHub](https://github.com/jfclarke/osm_coyote_glmm), and/or in the links provided. Happy figure- and map-making :-)
 
-## 1) set-up
+# set-up
 
 #### start by loading in relevant packages:
 ```{r packages, message=FALSE, warning=FALSE}
@@ -32,29 +36,31 @@ library(ggeffects)
 library(scales)
 library(rphylopic)
 library(MuMIn)
+library(car)
+library(readr)
 ```
 
-#### and setting the ggplot theme
+# and setting the ggplot theme
 ```{r ggplot_theme, message=FALSE}
 theme_set(theme_classic())
 ```
 
-## 2) data import
+# data import
 
-#### a) read in processed data (created using coyote_formatting script):
+read in processed data (created using coyote_formatting script):
 ```{r coyote_data, message=FALSE}
 coyote_data <-
   
   read_csv('data/processed/coyote_data.csv') %>% 
   
-  # add wide_linear column combining all wide linear features (determined using coyote_analysis script)
+  # add wide_linear column combining all wide linear features
   mutate(wide_linear = 
            roads + 
            seismic_lines +
            transmission_lines)
 ```
 
-#### b) run top model (determined using coyote_analysis script):
+run top model (determined using coyote_analysis script):
 ```{r global, message=FALSE}
 global <-
   
@@ -74,17 +80,18 @@ global <-
     family = binomial)
 ```
 
-## 3) calculating odds ratios
+# calculate odds ratios
 
-```{r global_odds, message=FALSE}
-global_odds <-
+**\textcolor{blue}{step 1:} calculate odds ratio for wide linear features model**
+```{r wide_lf_odds, message=FALSE}
+wide_lf_odds <-
   
   # calculate confidence intervals
-  confint(global,
+  confint(wide_lf,
           parm = 'beta_') %>% 
   
   # extract fixed effects coefficients
-  cbind(est = fixef(global)) %>% 
+  cbind(est = fixef(wide_lf)) %>% 
   
   # exponentiate to get odds ratios
   exp() %>% 
@@ -105,6 +112,36 @@ global_odds <-
          upper = '97.5 %') %>% 
   
   # add a column with cleaned-up plot label names (so we don't have to do this in ggplot2)
+  add_column(label = c('roads',
+                       'seismic lines',
+                       'transmission lines')) %>% 
+  
+  # change label column into a factor for plotting
+  mutate(label = as.factor(label))
+```
+
+**\textcolor{blue}{step 2:} calculate odds ratio for global model**
+```{r global_odds, message=FALSE}
+global_odds <-
+  
+  confint(global,
+          parm = 'beta_') %>% 
+  
+  cbind(est = fixef(global)) %>% 
+  
+  exp() %>% 
+  
+  as.data.frame() %>% 
+  
+  rownames_to_column(var = 'term') %>% 
+  
+  as_tibble() %>%
+  
+  filter(term != '(Intercept)') %>% 
+
+  rename(lower = '2.5 %',
+         upper = '97.5 %') %>% 
+  
   add_column(label = c('natural landcover',
                        'wide linear features',
                        'white-tailed deer',
@@ -115,24 +152,62 @@ global_odds <-
                        'lynx',
                        'fisher')) %>% 
   
-  # change label column into a factor for plotting
-  mutate(label = as.factor(label)) %>% 
-  
-  # add column for whether error bars overlap with 1 (for plotting)
-  add_column(overlap = c('N',
-                         'N',
-                         'Y',
-                         'Y',
-                         'Y',
-                         'N',
-                         'N',
-                         'N',
-                         'Y'))
+  mutate(label = as.factor(label))
 ```
 
-## 4) odds ratios plot
-```{r odds_plot}
-odds_plot <-
+# odds ratios plots
+
+**\textcolor{blue}{step 1:} plotting wide linear features model**
+```{r odds_plot_1}
+odds_plot_1 <-
+  
+  ggplot(data = wide_lf_odds,
+         aes(x = label,
+             y = est)) +
+  
+  scale_y_continuous(limits = c(0.75, 2.15),
+                     breaks = seq(0.8, 2.15, by = 0.2),
+                     expand = c(0, 0)) +
+  
+  # add line at 1
+  geom_hline(yintercept = 1,
+             alpha = 0.7,
+             linetype = 'dashed') +
+  
+  # add points for estimates
+  geom_point(size = 3) +
+  
+  # add confidence intervals
+  geom_linerange(aes(ymin = lower,
+                     ymax = upper),
+                 linewidth = 0.5) +
+  
+  # reverse the order of labels on the x axis
+  # (ggplot annoyingly plots them in reverse order)
+  scale_x_discrete(limits = rev) +
+  
+  # rename y axis title
+  ylab('odds ratio') +
+  
+  # flip x and y axis 
+  coord_flip() +
+  
+  theme_classic() +
+  
+  # specify theme elements
+  theme(panel.grid = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        legend.position = 'none',
+        axis.title.x = element_text(size = 14))
+
+# run odds_plot_1 to see figure
+odds_plot_1
+```
+
+**\textcolor{blue}{step 2:} plotting global model**
+```{r odds_plot_2}
+odds_plot_2 <-
   
   ggplot(data = global_odds %>%
            
@@ -148,8 +223,7 @@ odds_plot <-
                                       'white-tailed deer',
                                       'moose')),
          aes(x = label,
-             y = est,
-             color = overlap)) +
+             y = est)) +
 
   # add background for landscape covariates
   annotate('rect',
@@ -180,7 +254,8 @@ odds_plot <-
   
   # add line at 1
   geom_hline(yintercept = 1,
-             alpha = 0.7) +
+             alpha = 0.7,
+             linetype = 'dashed') +
   
   # add points for estimates
   geom_point(size = 3) +
@@ -189,10 +264,6 @@ odds_plot <-
   geom_linerange(aes(ymin = lower,
                      ymax = upper),
                  linewidth = 0.5) +
-  
-  # set colour based on whether error bars overlap with 1
-  scale_color_manual(values = c('black', 'grey70' ),
-                     labels = c('N', 'Y')) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
@@ -203,28 +274,41 @@ odds_plot <-
   # flip x and y axis 
   coord_flip() +
   
+  theme_classic() +
+  
   # specify theme elements
   theme(panel.grid = element_blank(),
         axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
         legend.position = 'none',
         axis.title.x = element_text(size = 14))
 
-# run odds_plot to see figure
-odds_plot
+# run odds_plot_2 to see figure
+odds_plot_2
 ```
 
-## 5) export odds ratio plot
+# export odds ratio plots
 
-#### save odds_plot to 'figures' folder:
+# save plots to 'figures' folder:
 ```{r odds_plot_exp, message=FALSE}
-ggsave('odds_ratio_plot.tiff',
-       odds_plot,
+ggsave('odds_ratio_lf.tiff',
+       odds_plot_1,
+       width = 150,
+       height = 100,
+       units = 'mm',
+       path = 'figures')
+
+ggsave('odds_ratio_h.tiff',
+       odds_plot_2,
+       width = 150,
+       height = 100,
+       units = 'mm',
        path = 'figures')
 ```
 
-## 6) determining predicted probabilities
+# determine predicted probabilities
 
-#### predicted probabilities given each covariates of interest:
+predicted probabilities given each covariates of interest:
 ```{r pp, message=FALSE}
 pp_nat_land <-
   
@@ -281,13 +365,13 @@ pp_lynx <-
             type = 'fe')
 ```
 
-## 7) predicted probabilities plots
+# predicted probabilities plots
 
-#### <span style="color: darkblue;">side note:</span> to find the PhyloPic uuid (= image ID), type the following code in the console:
+**side note:** to find the PhyloPic uuid (= image ID), type the following code in the console:
 ```{r phylopic, eval=FALSE}
 pick_phylopic(name = 'Alces alces', n = 2) # or whatever other species/number
 ```
-#### where name is the scientific or common name of the species of interest and n is the number of options you want to peruse; when you find the image you want, select it and find the uuid in the console output
+where name is the scientific or common name of the species of interest and n is the number of options you want to peruse; when you find the image you want, select it and find the uuid in the console output
 
 plot predicted probability of coyote occurrence given proportion of natural landcover:
 ```{r plot_nat_land}
