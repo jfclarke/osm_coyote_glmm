@@ -24,6 +24,7 @@ library(rphylopic)
 library(MuMIn)
 library(car)
 library(readr)
+library(insight)
 
 # set ggplot theme
 theme_set(theme_classic())
@@ -370,7 +371,7 @@ plot_nat_land <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('natural land') +
+  xlab('natural landcover') +
   
   ylab(' ') +
   
@@ -468,7 +469,7 @@ plot_red_squirrel <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('squirrel') +
+  xlab('red squirrel') +
   
   ylab(' ') +
   
@@ -504,7 +505,7 @@ plot_snowshoe_hare <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('hare') +
+  xlab('snowshoe hare') +
   
   ylab(' ') +
   
@@ -542,7 +543,7 @@ plot_white_tailed_deer <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('deer') +
+  xlab('white-tailed deer') +
   
   ylab(' ') +
   
@@ -618,7 +619,7 @@ plot_grey_wolf <-
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('wolf') +
+  xlab('grey wolf') +
   
   ylab(' ') +
   
@@ -686,13 +687,13 @@ pp_plot <-
             labels = 'auto',
             label.x = 0.88,
             font.label = list(size = 14),
-            ncol = 5,
-            nrow = 2) %>% 
+            ncol = 3,
+            nrow = 3) %>% 
   
   annotate_figure(left = text_grob('predicted coyote occurrence',
                                    rot = 90,
                                    vjust = 0.5,
-                                   size = 16))
+                                   size = 20))
 
 # 9) export predicted probabilities figure ---------------------------------
 
@@ -700,7 +701,7 @@ ggsave('predicted_probabilities_panel.png',
        pp_plot,
        path = 'figures',
        width = 250,
-       height = 100,
+       height = 250,
        units = 'mm',
        bg = 'white')
 
@@ -850,16 +851,18 @@ ggsave('vif_plot.png',
 # adapted from Marissa's OSM_2022-2023 folder, script 1 (https://github.com/ACMElabUvic/OSM_2022-2023/tree/main)
 
 # read in deployment data
-deploy <- read_csv('data/raw/OSM_2021_2022_Deployment_Data.csv',
-                    
-                   # specify how to read in columns
-                    col_types = cols(Project.ID = readr::col_factor(),
-                                     Deployment.Location.ID = readr::col_factor(),
-                                     Camera.Deployment.Begin.Date = readr::col_date(
-                                       format = "%d-%b-%y"),
-                                     Camera.Deployment.End.Date = readr::col_date(
-                                       format = "%d-%b-%y"),
-                                     .default = readr::col_character())) %>% 
+deploy <-
+  
+  read_csv('data/raw/OSM_2021_2022_Deployment_Data.csv',
+           
+           # specify how to read in columns
+           col_types = cols(Project.ID = readr::col_factor(),
+                            Deployment.Location.ID = readr::col_factor(),
+                            Camera.Deployment.Begin.Date = readr::col_date(
+                              format = "%d-%b-%y"),
+                            Camera.Deployment.End.Date = readr::col_date(
+                              format = "%d-%b-%y"),
+                            .default = readr::col_character())) %>% 
   
   # set the column names to lower case
   set_names(
@@ -876,22 +879,39 @@ deploy <- read_csv('data/raw/OSM_2021_2022_Deployment_Data.csv',
          array = project_id,
          site = deployment_location_id) %>% 
   
-  # rename site entries and remove prefix OSM from array
-  
+  # rename site entries and remove prefix "OSM_" from array
+  # change LU01 to LU1 for consistency
+  # make array a factor
   mutate(site = as.factor(case_when(site == 'LU15-44' ~ 'LU15_44',
                                     site == 'LI15_03' ~ 'LU15_03',
                                     TRUE  ~ site)),
          array = str_remove(array, 
-                            pattern = "OSM_")) %>% 
+                            pattern = "OSM_"),
+         array = dplyr::recode(array,
+                               LU01 = 'LU1'),
+         array = as.factor(array)) %>% 
   
   # remove columns we don't need
   select(!c(camera_failure_details,
             deployment_id)) %>% 
   
   # remove ABMI sites
-  na.omit()
+  na.omit() %>% 
+  
+  # to correct order of arrays in plot: make a new column with just LU number...
+  mutate(lu = str_remove(array,
+                         pattern = 'LU'),
+         lu = as.numeric(lu)) %>% 
+  
+  # arrange smallest to largest...
+  arrange(-lu) %>% 
+  
+  # make another column with unique ascending values and order according to values and reorder according to it
+  mutate(value = 1:233,
+         site_new = fct_reorder(site,
+                                value))
 
-# calculate number of operational days
+# calculate number ovalue# calculate number of operational days
 ct_op <- deploy %>% 
   
   # first group by site to calculate days camera at each site was operating for
@@ -904,22 +924,28 @@ ct_op <- deploy %>%
   summarise(total_camera_days = sum(days_active))
 
 # plot camera operability
-# create graph of camera operability
 ct_op_plot <- 
   
-  ggplot(deploy,
+  ggplot(deploy %>%
+           
+           # customize order of labels
+           mutate(array = fct_relevel(array,
+                                      'LU1',
+                                      'LU2',
+                                      'LU3',
+                                      'LU13',
+                                      'LU15',
+                                      'LU21')),
          aes(color = array)) +
-  
-  #set colour based on covariate type
-  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77'),
-                     labels = c('Cold Lake', 'Fort McKay East', 'Grand Rapids South', 'Lac La Biche', 'Grand Rapids North', 'Christina Lake'),
-                     guide = guide_legend(reverse = TRUE)) + # this reverses legend order so colours are ordered nicely
   
   geom_segment(aes(x = start_date, 
                    xend = end_date,
-                   y = site, 
-                   yend = site),
-               linewidth = 0.8) +
+                   y = site_new, 
+                   yend = site_new),
+               linewidth = 0.7) +
+  
+  # set colours
+  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77')) +
   
   xlab('date') +
   
@@ -938,14 +964,19 @@ ct_op_plot <-
 ggsave('ct_op.png',
        ct_op_plot,
        path = 'figures',
-       width = 250,
-       height = 200,
+       width = 150,
+       height = 150,
        units = 'mm')
 
 
 # 13) simulation results --------------------------------------------------
 
 # A) density plots of simulated model parameters
+
+# read in simulation results
+sim_results <-
+  
+  read_csv('data/processed/simulation_output.csv')
 
 # before plotting, extract 'true' parameter values
 nat_land_truth <-
@@ -992,9 +1023,6 @@ moose_truth <-
   get_parameters(global) %>% 
   filter(Parameter == 'scale(moose)') %>% 
   pull(Estimate)
-
-# set ggplot theme
-theme_set(theme_classic())
 
 # plot the spread of simulated parameter estimates
 d_nat_land <- 
@@ -1245,24 +1273,24 @@ d_plot <-
             d_moose,
             labels = NULL,
             label.x = 0.88,
-            font.label = list(size = 16),
-            ncol = 5,
-            nrow = 2) %>% 
+            font.label = list(size = 14),
+            ncol = 3,
+            nrow = 3) %>% 
   
   annotate_figure(left = text_grob('density',
                                    rot = 90,
                                    vjust = 0.5,
-                                   size = 18)) %>% 
+                                   size = 20)) %>% 
   
   annotate_figure(bottom = text_grob('beta coefficient estimate',
                                      hjust = 0.5,
-                                     size = 18))
+                                     size = 20))
 # save panel plot
 ggsave('simulated_parameters_panel.png',
        d_plot,
        path = 'figures',
        width = 250,
-       height = 100,
+       height = 250,
        units = 'mm',
        bg = 'white')
 
@@ -1385,6 +1413,7 @@ roads <-
   
   st_transform(crs = 26912) %>% 
   
+  # simplify layer to speed up mapping
   st_union()
 
 # H) read in cities layer
@@ -1472,54 +1501,60 @@ lus_cts <-
   tm_dots(col = 'black',
           size = 0.3) +
   tm_text('name',
-          size = 0.7,
-          just = c(-0.11,-0.11)) +
+          size = 1.1,
+          just = c(-0.11,-0.11),
+          fontface = 'bold') +
   
   # add points for CT deployment locations in LU1
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU1'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU2
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU2'))) +
   tm_dots(col = '#DC3220',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU3
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU3'))) +
   tm_dots(col = '#DC3220',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU13
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU13'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU15
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU15'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU21
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU21'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
+  
+  tm_shape(lus) +
+  tm_text('namerefere',
+                    size = 0.9,
+                    just = c(1.7, -2.5)) +
   
   # add scale bar
   tm_scale_bar(position = c('left', 'BOTTOM'),
-               text.size = 0.7,
+               text.size = 0.8,
                width = 0.2) +
   
   # specify layout elements
@@ -1573,7 +1608,7 @@ inset_map <-
 ggsave('study_area_map.png',
        inset_map,
        path = 'figures',
-       width = 100,
-       height = 105,
+       width = 150,
+       height = 150,
        units = 'mm',
        bg = 'transparent')

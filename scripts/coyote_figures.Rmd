@@ -38,6 +38,7 @@ library(rphylopic)
 library(MuMIn)
 library(car)
 library(readr)
+library(insight)
 ```
 
 # and setting the ggplot theme
@@ -388,7 +389,7 @@ plot_nat_land <-
               fill = 'darkseagreen',
               alpha = 0.4) +
   
-  scale_x_continuous(limits = c(0.7, 1),
+  scale_x_continuous(limits = c(0.7, 1.01),
                      breaks = seq(0.7, 1, by = 0.1),
                      expand = c(0, 0)) +
   
@@ -396,13 +397,13 @@ plot_nat_land <-
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('proportion natural land') +
+  xlab('natural landcover') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 ```
   
@@ -421,19 +422,20 @@ plot_wide_linear <-
               fill = 'darkseagreen',
               alpha = 0.4) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 0.65, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('proportion of wide LFs') +
+  xlab('wide LFs') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 ```
 
@@ -450,21 +452,22 @@ plot_moose <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.4) +
+              alpha = 0.2) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total moose detections') +
+  xlab('moose') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add moose silhouette
@@ -487,23 +490,24 @@ plot_red_squirrel <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.4) +
+              alpha = 0.2) +
   
-  scale_x_continuous(limits = c(0, 150),
+  scale_x_continuous(limits = c(0, 153),
                      breaks = seq(0, 150, by = 50),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total squirrel detections') +
+  xlab('red squirrel') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add squirrel silhouette
@@ -526,21 +530,22 @@ plot_snowshoe_hare <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.4) +
+              alpha = 0.2) +
   
-  scale_x_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total hare detections') +
+  xlab('snowshoe hare') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add hare silhouette
@@ -563,23 +568,24 @@ plot_white_tailed_deer <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.4) +
+              alpha = 0.2) +
   
   scale_x_continuous(limits = c(0, 130),
                      breaks = seq(0, 130, by = 30),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = label_wrap(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total deer detections') +
+  xlab('white-tailed deer') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add deer silhouette
@@ -606,19 +612,20 @@ plot_fisher <-
   
   scale_x_continuous(limits = c(0, 12.5),
                      breaks = seq(0, 12.5, by = 3),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total fisher detections') +
+  xlab('fisher') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add fisher silhouette
@@ -645,19 +652,20 @@ plot_grey_wolf <-
   
   scale_x_continuous(limits = c(0, 13),
                      breaks = seq(0, 13, by = 3),
-                     expand = c(0, 0)) +
+                     expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total wolf detections') +
+  xlab('grey wolf') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add wolf silhouette
@@ -682,19 +690,20 @@ plot_lynx <-
               fill = 'lightsteelblue1',
               alpha = 0.4) +
   
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     labels = wrap_format(10)) +
   
   scale_y_continuous(limits = c(0, 0.65),
                      breaks = seq(0, 1, by = 0.2),
                      expand = c(0, 0)) +
   
-  xlab('total lynx detections') +
+  xlab('lynx') +
   
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 7),
-        axis.title.x = element_text(size = 9),
+        axis.text = element_text(size = 9),
+        axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
   # add lynx silhouette
@@ -704,9 +713,9 @@ plot_lynx <-
                height = 0.17)
 ```
 
-## 8) predicted probabilities plot panel
+# predicted probabilities plot panel
 
-#### combine predicted probabilities plots together in one figure:
+combine predicted probabilities plots together in one figure:
 ```{r pp_plot, warning=FALSE}
 pp_plot <-
   
@@ -721,99 +730,35 @@ pp_plot <-
             plot_moose,
             labels = 'auto',
             label.x = 0.88,
-            font.label = list(size = 12),
-            ncol = 5,
-            nrow = 2) %>% 
+            font.label = list(size = 14),
+            ncol = 3,
+            nrow = 3) %>% 
   
   annotate_figure(left = text_grob('predicted coyote occurrence',
                                    rot = 90,
-                                   vjust = 0.5),
-                  fig.lab.size = 14)
+                                   vjust = 0.5,
+                                   size = 20))
 
 # run pp_plot to see figure
 pp_plot
 ```
 
-## 9) export predicted probabilities figure
+# export predicted probabilities figure
 
-#### save pp_plot to 'figures' folder:
+save `pp_plot` to 'figures' folder:
 ```{r pp_plot_exp, message=FALSE}
 ggsave('predicted_probabilities_panel.png',
        pp_plot,
        path = 'figures',
        width = 250,
-       height = 100,
+       height = 250,
        units = 'mm',
        bg = 'white')
 ```
 
-## 10) predicted probabilities w/ random effects
+# variance inflation factor
 
-#### determining and plotting an example graph of predicted probabilities with random effects
-  
-#### choosing wide linear features as the fixed effect:
-```{r re_pp_wide_linear}
-re_pp_wide_linear <-
-  
-  ggpredict(global, 
-            terms = c('wide_linear [all]', # fixed effect
-                      'array'), # random effect
-            type = "random")
-```
-
-#### plot predicted probability of coyote occurrence given total independent lynx detections and random effects of array:
-```{r re_plot}
-re_plot <-
-  
-  ggplot(re_pp_wide_linear,
-         aes(x = x,
-             y = predicted)) +
-  
-  geom_line(aes(color = group)) +
-  
-  # using colourblind-friendly Tol colour scheme
-  # more info at https://personal.sron.nl/~pault/
-  scale_fill_manual(values = c('#4477AA',
-                               '#66CCEE',
-                               '#228833',
-                               '#CCBB44',
-                               '#EE6677',
-                               '#AA3377')) +
-  
-  geom_ribbon(aes(fill = group,
-                  ymin = conf.low,
-                  ymax = conf.high),
-              alpha = 0.1) +
-  
-  scale_color_manual(values = c('#4477AA',
-                                '#66CCEE',
-                                '#228833',
-                                '#CCBB44',
-                                '#EE6677',
-                                '#AA3377')) +
-  
-  labs(color = NULL,
-       fill = NULL,
-       x = 'proportion of wide LFs',
-       y = 'predicted coyote occurrence')
-
-# run re_plot to see figure
-re_plot
-```
-
-#### save plot:
-```{r re_plot_exp, message=FALSE}
-ggsave('re_predicted_probability.png',
-       re_plot,
-       path = 'figures',
-       width = 183,
-       height = 100,
-       units = 'mm')
-```
-
-## 11) variance inflation factor
-
-#### calculate variance inflation factors (VIFs):
+calculate variance inflation factors (VIFs):
 ```{r vif}
 vif_model <-
   
@@ -846,7 +791,7 @@ vif_model <-
                           'prey'))
 ```
 
-#### plot VIFs:
+plot VIFs:
 ```{r vif_plot}
 vif_plot <-
   
@@ -900,7 +845,7 @@ vif_plot <-
 vif_plot
 ```
 
-#### save plot:
+save `vif_plot` to 'figures' folder:
 ```{r vif_plot_exp}
 ggsave('vif_plot.png',
        vif_plot,
@@ -911,9 +856,9 @@ ggsave('vif_plot.png',
 ```
 
 
-## 12) mapping set-up
+# mapping set-up
 
-#### a) read in LU polygons where CTs were deployed:
+read in LU polygons:
 ```{r lus, message=FALSE}
 # first: specify which LUs
 # for 2021-2022 - LUs 2 + 3
@@ -934,7 +879,7 @@ lus <-
   filter(lu %in% target)
 ```
 
-#### b) read in CT deployment data for 2022:
+read in CT deployment data for 2022:
 ```{r cts_2022, message=FALSE}
 cts_2022 <-
   
@@ -945,7 +890,7 @@ cts_2022 <-
       tolower())
 ```
 
-#### c) read in CT deployment data for 2021 per LU and combine into single dataframe:
+read in CT deployment data for 2021 per LU and combine into single dataframe:
 ```{r cts_2021, message=FALSE}
 cts_2021 <-
   
@@ -957,7 +902,7 @@ cts_2021 <-
       tolower())
 ```
 
-#### d) read in provincial boundaries:
+read in provincial boundaries:
 ```{r provs, message=FALSE}
 # source = Statistics Canada (https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm)
 provs <- 
@@ -972,7 +917,7 @@ provs <-
 
 ```
 
-#### e) subset Alberta:
+subset Alberta:
 ```{r ab_boundary}
 ab_boundary <-
   
@@ -980,7 +925,7 @@ ab_boundary <-
   filter(prename == 'Alberta')
 ```
 
-#### f) crop Alberta spatial info to northeast (oil sands region):
+crop Alberta spatial info to northeast (oil sands region):
 ```{r ne_ab}
 # figure out spatial extent of LUs
 raster::extent(lus)
@@ -995,7 +940,7 @@ ne_ab_bbox <-
           crs = st_crs(26912))
 ```
 
-#### g) read in Alberta roads layer:
+read in Alberta roads layer:
 ```{r roads, message=FALSE}
 # source = National Road Network (https://open.canada.ca/data/en/dataset/cb4911f1-89d8-47f0-92e1-2cbfac3d300b/resource/e7fa72ef-92ea-4465-bd8f-9b6b765ae0ec)
 roads <- 
@@ -1008,10 +953,11 @@ roads <-
   
   st_transform(crs = 26912) %>% 
   
-  st_union() # simplify layer to speed up mapping
+  # simplify layer to speed up mapping
+  st_union()
 ```
 
-#### h) read in cities layer:
+read in cities layer:
 ```{r cities, message=FALSE}
 cities <-
   
@@ -1026,9 +972,9 @@ cities <-
   filter(name == 'Fort McMurray')
 ```
  
-## 13) map of study area
+# map of study area
 
-#### extend bounding box so map features (e.g., scale bar) don't overlap with map itself:
+extend bounding box so map features (e.g., scale bar) don't overlap with map itself:
 ```{r bbox1}
 bbox1 <-  st_bbox(ne_ab_bbox)
 
@@ -1040,12 +986,12 @@ bbox1 <- bbox1 %>%
   st_as_sfc() # make bounding box an sf polygon
 ```
 
-#### set tmap mode to 'plot':
+set tmap mode to `plot`:
 ```{r tmap_mode, message=FALSE}
 tmap_mode('plot')
 ```
 
-#### map LUs and CT deployments in NE Alberta:
+map LUs and CT deployments in NE Alberta:
 ```{r lus_cts}
 lus_cts <-
   
@@ -1102,54 +1048,60 @@ lus_cts <-
   tm_dots(col = 'black',
           size = 0.3) +
   tm_text('name',
-          size = 0.7,
-          just = c(-0.11,-0.11)) +
+          size = 1.1,
+          just = c(-0.11,-0.11),
+          fontface = 'bold') +
   
   # add points for CT deployment locations in LU1
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU1'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU2
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU2'))) +
   tm_dots(col = '#DC3220',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU3
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU3'))) +
   tm_dots(col = '#DC3220',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU13
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU13'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU15
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU15'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
   
   # add points for CT deployment locations in LU21
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU21'))) +
   tm_dots(col = '#005AB5',
-          size = 0.02) +
+          size = 0.07) +
+  
+  tm_shape(lus) +
+  tm_text('namerefere',
+                    size = 0.9,
+                    just = c(1.7, -2.5)) +
   
   # add scale bar
   tm_scale_bar(position = c('left', 'BOTTOM'),
-               text.size = 0.7,
+               text.size = 0.8,
                width = 0.2) +
   
   # specify layout elements
@@ -1157,14 +1109,14 @@ lus_cts <-
             bg.color = 'transparent')
 ```
 
-#### set NE Alberta bbox as an sf object:
+set NE Alberta bbox as an sf object:
 ```{r ne_ab_bbox}
 ne_ab_bbox <- 
   ne_ab_bbox %>% 
   st_as_sfc()
 ```
 
-#### overlay map of Alberta within Canada, with box around NE Alberta:
+overlay map of Alberta within Canada, with box around NE Alberta:
 ```{r ne_ab_can}
 ne_ab_can <-
   tm_shape(provs) +
@@ -1180,7 +1132,7 @@ ne_ab_can <-
   tm_layout(frame.lwd = 2)
 ```
 
-#### overlay maps:
+overlay maps:
 ```{r inset_map, warning=FALSE}
 # convert tmap objects into elements that cowplot can recognize
 lus_cts_grob <- tmap_grob(lus_cts)
@@ -1207,15 +1159,15 @@ inset_map <-
 inset_map
 ```
 
-## export study area map with inset
+# export study area map with inset
 
-#### save inset_map to 'figures' folder:
+save `inset_map` to 'figures' folder:
 ```{r inset_map_exp, message=FALSE}
 ggsave('study_area_map.png',
        inset_map,
        path = 'figures',
-       width = 100,
-       height = 105,
+       width = 150,
+       height = 150,
        units = 'mm',
        bg = 'transparent')
 ```
