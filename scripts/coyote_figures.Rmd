@@ -1,7 +1,7 @@
 ---
 title: '**coyote_figures**'
 author: 'Jamie Clarke'
-date: 'last updated: 26/03/2025'
+date: 'last updated: 31/03/2025'
 fontsize: 12pt
 mainfont: Helvetica
 output:
@@ -13,12 +13,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## about
+# about
 This is a figure- and map-making code walkthrough for the manuscript *Energy infrastructure clears the way for coyotes in Alberta's oil sands*. It was written by Jamie F Clarke with help from Marissa A Dyck. Before running this script, you will need to format and analyze the data using the coyote_formatting and coyote_analysis scripts. The spatial data required to run the script is available on [Jamie's GitHub](https://github.com/jfclarke/osm_coyote_glmm), and/or in the links provided. Happy figure- and map-making :-)
 
 # set-up
 
-#### start by loading in relevant packages:
+start by loading in relevant packages:
 ```{r packages, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(PerformanceAnalytics)
@@ -41,7 +41,7 @@ library(readr)
 library(insight)
 ```
 
-# and setting the ggplot theme
+and setting the ggplot theme
 ```{r ggplot_theme, message=FALSE}
 theme_set(theme_classic())
 ```
@@ -61,8 +61,19 @@ coyote_data <-
            transmission_lines)
 ```
 
-run top model (determined using coyote_analysis script):
+run top models (determined using coyote_analysis script):
 ```{r global, message=FALSE}
+wide_lf <-
+  
+  glmer(
+    cbind(coyote_pres, coyote_abs) ~ 
+      scale(roads) +
+      scale(seismic_lines) +
+      scale(transmission_lines) +
+      (1 | array),
+    data = coyote_data,
+    family = binomial)
+
 global <-
   
   glmer(
@@ -83,7 +94,7 @@ global <-
 
 # calculate odds ratios
 
-**\textcolor{blue}{step 1:} calculate odds ratio for wide linear features model**
+**\textcolor{blue}{step 1 -}** calculate odds ratio for wide linear features model:
 ```{r wide_lf_odds, message=FALSE}
 wide_lf_odds <-
   
@@ -121,7 +132,7 @@ wide_lf_odds <-
   mutate(label = as.factor(label))
 ```
 
-**\textcolor{blue}{step 2:} calculate odds ratio for global model**
+**\textcolor{blue}{step 2 -}** calculate odds ratio for global model:
 ```{r global_odds, message=FALSE}
 global_odds <-
   
@@ -158,7 +169,7 @@ global_odds <-
 
 # odds ratios plots
 
-**\textcolor{blue}{step 1:} plotting wide linear features model**
+**\textcolor{blue}{step 1 -}** plotting wide linear features model:
 ```{r odds_plot_1}
 odds_plot_1 <-
   
@@ -206,7 +217,7 @@ odds_plot_1 <-
 odds_plot_1
 ```
 
-**\textcolor{blue}{step 2:} plotting global model**
+**\textcolor{blue}{step 2 -}** plotting global model:
 ```{r odds_plot_2}
 odds_plot_2 <-
   
@@ -290,7 +301,7 @@ odds_plot_2
 
 # export odds ratio plots
 
-# save plots to 'figures' folder:
+save plots to 'figures' folder:
 ```{r odds_plot_exp, message=FALSE}
 ggsave('odds_ratio_lf.tiff',
        odds_plot_1,
@@ -309,7 +320,7 @@ ggsave('odds_ratio_h.tiff',
 
 # determine predicted probabilities
 
-predicted probabilities given each covariates of interest:
+calculate predicted probabilities given each covariate of interest:
 ```{r pp, message=FALSE}
 pp_nat_land <-
   
@@ -368,9 +379,9 @@ pp_lynx <-
 
 # predicted probabilities plots
 
-**side note:** to find the PhyloPic uuid (= image ID), type the following code in the console:
+**side note -** to find the PhyloPic uuid (= image ID), type the following code in the console:
 ```{r phylopic, eval=FALSE}
-pick_phylopic(name = 'Alces alces', n = 2) # or whatever other species/number
+pick_phylopic(name = 'Alces alces', n = 2)
 ```
 where name is the scientific or common name of the species of interest and n is the number of options you want to peruse; when you find the image you want, select it and find the uuid in the console output
 
@@ -716,7 +727,7 @@ plot_lynx <-
 # predicted probabilities plot panel
 
 combine predicted probabilities plots together in one figure:
-```{r pp_plot, warning=FALSE}
+```{r pp_plot, warning=FALSE, fig.dim=c(8,8)}
 pp_plot <-
   
   ggarrange(plot_nat_land,
@@ -846,7 +857,7 @@ vif_plot
 ```
 
 save `vif_plot` to 'figures' folder:
-```{r vif_plot_exp}
+```{r vif_plot_exp, eval=FALSE}
 ggsave('vif_plot.png',
        vif_plot,
        path = 'figures',
@@ -855,6 +866,512 @@ ggsave('vif_plot.png',
        units = 'mm')
 ```
 
+# camera operability plot
+
+this section is adapted from Marissa's [OSM_2022-2023 script 1](https://github.com/ACMElabUvic/OSM_2022-2023/tree/main)  
+
+read in deployment data:
+```{r deploy}
+deploy <-
+  
+  read_csv('data/raw/OSM_2021_2022_Deployment_Data.csv',
+           
+           # specify how to read in columns
+           col_types = cols(Project.ID = readr::col_factor(),
+                            Deployment.Location.ID = readr::col_factor(),
+                            Camera.Deployment.Begin.Date = readr::col_date(
+                              format = "%d-%b-%y"),
+                            Camera.Deployment.End.Date = readr::col_date(
+                              format = "%d-%b-%y"),
+                            .default = readr::col_character())) %>% 
+  
+  # set the column names to lower case
+  set_names(
+    names(.) %>% 
+      tolower() %>%  
+      
+      # replace the '.' with '_'
+      str_replace_all(pattern = '\\.',
+                      replacement = '_')) %>% 
+  
+  # rename start and end date so they are shorter, rename project_id and deployment_location_id
+  rename(start_date = camera_deployment_begin_date,
+         end_date = camera_deployment_end_date,
+         array = project_id,
+         site = deployment_location_id) %>% 
+  
+  # rename site entries and remove prefix "OSM_" from array
+  # change LU01 to LU1 for consistency
+  # make array a factor
+  mutate(site = as.factor(case_when(site == 'LU15-44' ~ 'LU15_44',
+                                    site == 'LI15_03' ~ 'LU15_03',
+                                    TRUE  ~ site)),
+         array = str_remove(array, 
+                            pattern = "OSM_"),
+         array = dplyr::recode(array,
+                               LU01 = 'LU1'),
+         array = as.factor(array)) %>% 
+  
+  # remove columns we don't need
+  select(!c(camera_failure_details,
+            deployment_id)) %>% 
+  
+  # remove ABMI sites
+  na.omit() %>% 
+  
+  # to correct order of arrays in plot: make a new column with just LU number...
+  mutate(lu = str_remove(array,
+                         pattern = 'LU'),
+         lu = as.numeric(lu)) %>% 
+  
+  # arrange smallest to largest...
+  arrange(-lu) %>% 
+  
+  # and make another column with unique ascending values
+  # reorder according to values
+  mutate(value = 1:233,
+         site_new = fct_reorder(site,
+                                value))
+```
+
+calculate number of operational days:
+```{r ct_op}
+ct_op <- deploy %>% 
+  
+  # first group by site to calculate days camera at each site was operating for
+  group_by(site) %>% 
+  
+  # subtract end date from start date to get total number of days (adding 1 to ensure start and end date included)
+  summarise(days_active = sum(end_date - start_date + 1)) %>% 
+  
+  # sum all active days
+  summarise(total_camera_days = sum(days_active))
+```
+
+plot camera operability:
+```{r}
+ct_op_plot <- 
+  
+  ggplot(deploy %>%
+           
+           # customize order of labels
+           mutate(array = fct_relevel(array,
+                                      'LU1',
+                                      'LU2',
+                                      'LU3',
+                                      'LU13',
+                                      'LU15',
+                                      'LU21')),
+         aes(color = array)) +
+  
+  geom_segment(aes(x = start_date, 
+                   xend = end_date,
+                   y = site_new, 
+                   yend = site_new),
+               linewidth = 0.7) +
+  
+  # set colours
+  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77')) +
+  
+  xlab('date') +
+  
+  ylab('camera trap site') +
+  
+  theme_classic() +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        legend.title = element_blank())
+
+# run ct_op_plot to see figure
+ct_op_plot
+```
+
+save `ct_op_plot` to 'figures' folder:
+```{r ct_op_plot_exp, eval=FALSE}
+ggsave('ct_op.png',
+       ct_op_plot,
+       path = 'figures',
+       width = 150,
+       height = 150,
+       units = 'mm')
+```
+
+# simulation results
+
+read in simulation results:
+```{r sim_results, message=FALSE}
+sim_results <-
+  
+  read_csv('data/processed/simulation_output.csv')
+```
+
+before plotting, extract 'true' parameter values:
+```{r truth}
+nat_land_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(nat_land)') %>% 
+  pull(Estimate)
+
+wide_linear_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(wide_linear)') %>% 
+  pull(Estimate)
+
+fisher_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(fisher)') %>% 
+  pull(Estimate)
+
+lynx_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(lynx)') %>% 
+  pull(Estimate)
+
+grey_wolf_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(grey_wolf)') %>% 
+  pull(Estimate)
+
+red_squirrel_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(red_squirrel)') %>% 
+  pull(Estimate)
+
+snowshoe_hare_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(snowshoe_hare)') %>% 
+  pull(Estimate)
+
+white_tailed_deer_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(white_tailed_deer)') %>% 
+  pull(Estimate)
+
+moose_truth <-
+  get_parameters(global) %>% 
+  filter(Parameter == 'scale(moose)') %>% 
+  pull(Estimate)
+```
+
+plot the spread of simulated parameter estimates:
+```{r d_par}
+d_nat_land <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_nat_land"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = nat_land_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('natural land') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wide_lf <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wide_lf"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  
+  geom_vline(xintercept = wide_linear_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('wide LF') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_fisher <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_fisher"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('fisher') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_lynx <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_lynx"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = lynx_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('lynx') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wolf <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wolf"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  
+  geom_vline(xintercept = grey_wolf_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('wolf') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_squirrel <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_squirrel"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = red_squirrel_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('squirrel') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_hare <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_hare"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = snowshoe_hare_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('hare') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_wtd <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_wtd"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = white_tailed_deer_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab(' ') +
+  
+  ggtitle('deer') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+
+d_moose <- 
+  
+  ggplot(sim_results %>%
+           filter(Parameter == "sim_moose"),
+         aes(x = Estimate)) +
+  
+  geom_density(fill = "tomato", alpha = 0.4) +
+  
+  geom_vline(xintercept = moose_truth, linetype = "dashed") +
+  
+  scale_x_continuous(breaks = waiver(),
+                     n.breaks = 3,
+                     expand = c(0, 0)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  xlab(' ') +
+  
+  ylab('') +
+  
+  ggtitle('moose') +
+  
+  theme(axis.text = element_text(size = 11),
+        plot.title = element_text(hjust = 0.5,
+                                  size = 14))
+```
+
+arrange density plots into a single panel:
+```{r}
+d_plot <-
+  
+  ggarrange(d_nat_land,
+            d_wide_lf,
+            d_fisher,
+            d_lynx,
+            d_wolf,
+            d_squirrel,
+            d_hare,
+            d_wtd,
+            d_moose,
+            labels = NULL,
+            label.x = 0.88,
+            font.label = list(size = 14),
+            ncol = 3,
+            nrow = 3) %>% 
+  
+  annotate_figure(left = text_grob('density',
+                                   rot = 90,
+                                   vjust = 0.5,
+                                   size = 20)) %>% 
+  
+  annotate_figure(bottom = text_grob('beta coefficient estimate',
+                                     hjust = 0.5,
+                                     size = 20))
+
+# run d_plot to see figure
+d_plot
+```
+
+save `d_plot` to 'figures' folder:
+```{r d_plot_exp, eval=FALSE}
+ggsave('simulated_parameters_panel.png',
+       d_plot,
+       path = 'figures',
+       width = 250,
+       height = 250,
+       units = 'mm',
+       bg = 'white')
+```
+
+plot a bar graph of simulated model selection outcomes:
+```{r sel_plot}
+sel_plot <-
+  
+  ggplot(sim_results %>% 
+           select(model) %>% 
+           na.omit(),
+         aes(x = model)) +
+  
+  geom_bar(fill = 'darkgrey') +
+  
+  scale_x_discrete(labels = c ("sim_global" = "global", "sim_global_int" = "global interaction")) +
+  
+  scale_y_continuous(limits = c(0, 1000),
+                     breaks = seq(0, 1000, by = 200),
+                     expand = c(0, 0)) +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16))
+
+# run sel_plot to see figure
+sel_plot
+```
+
+save `sel_plot` to 'figures' folder:
+```{r sel_plot_exp, eval=FALSE}
+ggsave('simulated_top_models.png',
+       sel_plot,
+       path = 'figures',
+       width = 150,
+       height = 100,
+       units = 'mm',
+       bg = 'white')
+```
 
 # mapping set-up
 
@@ -902,9 +1419,9 @@ cts_2021 <-
       tolower())
 ```
 
-read in provincial boundaries:
+read in [provincial boundaries](https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm):
 ```{r provs, message=FALSE}
-# source = Statistics Canada (https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm)
+# source = Statistics Canada
 provs <- 
   
   st_read('data/spatial/lpr_000b16a_e.shp') %>% 
@@ -940,9 +1457,9 @@ ne_ab_bbox <-
           crs = st_crs(26912))
 ```
 
-read in Alberta roads layer:
+read in [Alberta roads layer](https://open.canada.ca/data/en/dataset/cb4911f1-89d8-47f0-92e1-2cbfac3d300b/resource/e7fa72ef-92ea-4465-bd8f-9b6b765ae0ec):
 ```{r roads, message=FALSE}
-# source = National Road Network (https://open.canada.ca/data/en/dataset/cb4911f1-89d8-47f0-92e1-2cbfac3d300b/resource/e7fa72ef-92ea-4465-bd8f-9b6b765ae0ec)
+# source = National Road Network
 roads <- 
   
   st_read('data/spatial/NRN_AB_14_0_ROADSEG.shp') %>% 
@@ -1132,13 +1649,16 @@ ne_ab_can <-
   tm_layout(frame.lwd = 2)
 ```
 
-overlay maps:
-```{r inset_map, warning=FALSE}
-# convert tmap objects into elements that cowplot can recognize
+convert tmap objects into elements that cowplot can recognize:
+```{r grob, message=FALSE}
 lus_cts_grob <- tmap_grob(lus_cts)
 ne_ab_can_grob <- tmap_grob(ne_ab_can)
+```
 
-# now: inset using cowplot
+
+overlay maps:
+```{r inset_map, warning=FALSE, fig.dim=c(8,8)}
+# inset using cowplot
 inset_map <-
   
   ggdraw(lus_cts_grob) + # add first layer = study area map
@@ -1171,4 +1691,3 @@ ggsave('study_area_map.png',
        units = 'mm',
        bg = 'transparent')
 ```
-

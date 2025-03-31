@@ -286,7 +286,7 @@ ggsave('odds_ratio_h.tiff',
 
 # 6) determine predicted probabilities -----------------------------------------
 
-# predicted probabilities given each covariates of interest
+# calculate predicted probabilities given each covariate of interest
 
 pp_nat_land <-
   
@@ -846,7 +846,7 @@ ggsave('vif_plot.png',
        height = 100,
        units = 'mm')
 
-# 12) camera operability plots --------------------------------------------
+# 12) camera operability plot --------------------------------------------
 
 # adapted from Marissa's OSM_2022-2023 folder, script 1 (https://github.com/ACMElabUvic/OSM_2022-2023/tree/main)
 
@@ -906,12 +906,13 @@ deploy <-
   # arrange smallest to largest...
   arrange(-lu) %>% 
   
-  # make another column with unique ascending values and order according to values and reorder according to it
+  # make another column with unique ascending values
+  # reorder according to values
   mutate(value = 1:233,
          site_new = fct_reorder(site,
                                 value))
 
-# calculate number ovalue# calculate number of operational days
+# calculate number of operational days
 ct_op <- deploy %>% 
   
   # first group by site to calculate days camera at each site was operating for
@@ -920,7 +921,7 @@ ct_op <- deploy %>%
   # subtract end date from start date to get total number of days (adding 1 to ensure start and end date included)
   summarise(days_active = sum(end_date - start_date + 1)) %>% 
   
-  # sum all the days
+  # sum all active days
   summarise(total_camera_days = sum(days_active))
 
 # plot camera operability
@@ -967,7 +968,6 @@ ggsave('ct_op.png',
        width = 150,
        height = 150,
        units = 'mm')
-
 
 # 13) simulation results --------------------------------------------------
 

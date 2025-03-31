@@ -48,6 +48,8 @@ This repository contains data, R scripts/outputs and other things needed for the
 
 */raw*: contains data aggregated by Marissa Dyck for other OSM projects (see [here](https://github.com/ACMElabUvic/OSM_2022-2023) for more details)
 
+* <span style = "color: #7B0F17;">**OSM_2021_2022_Deployment_Data.csv**</span>; deployment data for all camera sites deployed during 2021-2022 and 2022-2023 sampling periods
+
 * <span style = "color: #7B0F17;">**OSM_2022_total_detections.csv**</span>; total independent detections for all species and landscape units sampled in 2022-2023
 
 * <span style = "color: #7B0F17;">**OSM_covariates_grouped_2021_2022.csv**</span>; cleaned human footprint index and landcover data grouped based on feature type from landscape units sampled in 2021-2022 and 2022-2023
@@ -59,6 +61,8 @@ This repository contains data, R scripts/outputs and other things needed for the
 */processed*: contains cleaned and reformatted data, created using scripts in this repository
 
 * <span style = "color: #7B0F17;">**coyote_data.csv**</span>; formatted covariate (landcover and linear feature proportions, prey/competitor species total detections) and coyote monthly occurrence data
+
+* <span style = "color: #7B0F17;">**simulation_output.csv**</span>; results from 1,000 iterations of simulations (of top, global model and model selection)
 
 */spatial*: contains spatial data needed for mapping in R
 
@@ -72,17 +76,21 @@ This repository contains data, R scripts/outputs and other things needed for the
 
 **Files in 'scripts' Folder:**  
 
-* <span style = "color: #7B0F17;">**coyote_analysis**</span>; .R, .Rmd and .html files for GLMMs and data summaries   
-* <span style = "color: #7B0F17;">**coyote_formatting**</span>; .R, .Rmd and .html files for data exploration, coyote_data dataframe creation and correlation testing 
-* <span style = "color: #7B0F17;">**coyote_figures**</span>; .R, .Rmd and .html files for creating odds ratio, predicted probabilities and variance inflation factor plots, and an inset study area map
+* <span style = "color: #7B0F17;">**coyote_analysis**</span>; .R, .Rmd and .pdf files for GLMMs, data summaries and simulations   
+* <span style = "color: #7B0F17;">**coyote_figures**</span>; .R, .Rmd and .pdf files for creating odds ratio, predicted probabilities, variance inflation factor and simulation results plots, an inset study area map
+* <span style = "color: #7B0F17;">**coyote_formatting**</span>; .R, .Rmd and .pdf files for data exploration, coyote_data dataframe creation and correlation testing 
 
 **Files in 'figures' Folder:**  
 
-* <span style = "color: #7B0F17;">**odds_ratio_plot.tiff**</span>; plot of odds ratios for all top model covariates  
-* <span style = "color: #7B0F17;">**predicted_probabilities_panel.png**</span>; muti-panel plot showing predicted coyote occurrence given top model covariates   
-* <span style = "color: #7B0F17;">**re_predicted_probability.png**</span>; plot of predicted coyote occurrence per landscape unit (i.e., random effect), given an example covariate   
+* <span style = "color: #7B0F17;">**ct_op_plot.tiff**</span>; plot of camera trap operability  
+* <span style = "color: #7B0F17;">**odds_ratio_h.tiff**</span>; plot of odds ratios for global model covariates  
+* <span style = "color: #7B0F17;">**odds_ratio_lf.tiff**</span>; plot of odds ratios for wide linear feature model covariates  
+* <span style = "color: #7B0F17;">**predicted_probabilities_panel.png**</span>; multi-panel plot of predicted coyote occurrence given global model covariates   
+* <span style = "color: #7B0F17;">**re_predicted_probability.png**</span>; plot of predicted coyote occurrence per landscape unit (i.e., random effect), given an example covariate (NOTE: not used in manuscript, not in .Rmd or .pdf files)
+* <span style = "color: #7B0F17;">**simulated_parameters_panel.png**</span>; multi-panel plot of simulated beta coefficient values for global model covariates after 1,000 iterations
+* <span style = "color: #7B0F17;">**simulated_top_models**</span>; plot of best-performing simulated models after 1,000 iterations
 * <span style = "color: #7B0F17;">**study_area_map.png**</span>; map of landscape units and camera trap deployment locations in the oil sands region, with inset map of study area within Canada  
-* <span style = "color: #7B0F17;">**vif_plot.png**</span>; map of variance inflation factor values for all top model covariates    
+* <span style = "color: #7B0F17;">**vif_plot.png**</span>; map of variance inflation factor values for global model covariates    
 
 <hr>
 
@@ -103,6 +111,22 @@ Many people were involved in the collection and processing of these camera trap 
 <hr>
 
 ### RAW DATA  
+
+#### DATA-SPECIFIC INFORMATION FOR: [<span style = "color: #7B0F17;">OSM_2021_2022_Deployment_Data.csv</span>]  
+Camera trap deployment information for 2021-2023.
+
+* **Number of variables/columns:** 7
+*  **Number of observations/rows:** 237
+
+Variable list:
+
+* <span style = "color: #002747;">**Project.ID**</span>, landscape unit preceded by 'OSM_'; character
+* <span style = "color: #002747;">**Deployment.Location.ID**</span>, composite of LU number and camera station number (e.g., LU3_50); character   
+* <span style = "color: #002747;">**Camera.Deployment.Begin.Date**</span>, date camera was deployed; character  
+* <span style = "color: #002747;">**Camera.Deployment.End.Date**</span>, date camera failed/died; character
+* <span style = "color: #002747;">**Deployment.ID**</span>, unknown; character
+* <span style = "color: #002747;">**Months.Deployed**</span>, number of months camera was active; character
+* <span style = "color: #002747;">**Camera.Failure.Details**</span>, information about/description of camera failures; character
 
 #### DATA-SPECIFIC INFORMATION FOR: [<span style = "color: #7B0F17;">OSM_2022_total_detections.csv</span>]  
 Total independent detections of mammal species for 2022-2023.
@@ -192,3 +216,14 @@ This .csv contains combined variables from all raw files. Variable descriptions 
 * coyote monthly presence was renamed coyote_pres (from coyote), and absence renamed coyote_abs (from absent_coyote) for clarity
 * natural landcover was grouped into a single variable (called nat_land)
 * a new column combining wide linear into a single variable (called wide_linear) was created
+
+#### DATA-SPECIFIC INFORMATION FOR: [<span style = "color: #7B0F17;">simulation_output.csv</span>]  
+Results from 1,000 simulation iterations of the global model and model selection.
+
+* **Number of variables/columns:** 4
+*  **Number of observations/rows:** 11,000
+
+* <span style = "color: #002747;">**simulation**</span>, simulation iteration (number between 1-1,000); numeric
+* <span style = "color: #002747;">**Parameter**</span>, name of simulated global model intercept and covariates, and NA associated with top model outcome; character   
+* <span style = "color: #002747;">**Estimate**</span>, estimate of simulated global model intercept and covariates, and NA associated with top model outcome; numeric
+* <span style = "color: #002747;">**model**</span>, top-performing model from model selection, and NAs associated with intercept/covariate names/estimates; character
