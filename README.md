@@ -13,7 +13,7 @@ This repository contains data, R scripts/outputs and other things needed for the
 		Address: 3800 Finnerty Rd, Victoria, BC V8P 5C2  
 		Email: [fisherj@uvic.ca](mailto::email)
 
-**Author Information (code):** 		
+**Author Information (code):**  
 		Data Analysis Contact: Jamie Clarke  
 		Institution: University of Victoria  
 		Address: 3800 Finnerty Rd, Victoria, BC V8P 5C2  
