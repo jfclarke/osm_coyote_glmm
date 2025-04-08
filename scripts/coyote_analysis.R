@@ -417,6 +417,13 @@ coyote_data %>%
 sum(coyote_data$coyote_pres != 0,
     na.rm = TRUE)
 
+# mean number of presences/absences
+coyote_data %>% 
+  
+  select(coyote_pres, coyote_abs) %>% 
+  
+  summary()
+
 # 10) evaluation by simulation --------------------------------------------
 
 # this section is adapted from Ariel Muldoon's 'Simulate! Simulate!' series (https://aosmith.rbind.io/) and work by Dr Andrew Barnas, with heaps of coding help from Andrew (thank you!).

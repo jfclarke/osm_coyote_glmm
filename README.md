@@ -82,14 +82,17 @@ This repository contains data, R scripts/outputs and other things needed for the
 
 **Files in 'figures' Folder:**  
 
+* <span style = "color: #7B0F17;">**covariate_distribution_panel.png**</span>; plot of covariate spread across camera trap sites and LUs
 * <span style = "color: #7B0F17;">**ct_op_plot.tiff**</span>; plot of camera trap operability  
+* <span style = "color: #7B0F17;">**naive_occupancy.png**</span>; plot of naive coyote occupancy in all six LUs
 * <span style = "color: #7B0F17;">**odds_ratio_h.tiff**</span>; plot of odds ratios for global model covariates  
 * <span style = "color: #7B0F17;">**odds_ratio_lf.tiff**</span>; plot of odds ratios for wide linear feature model covariates  
 * <span style = "color: #7B0F17;">**predicted_probabilities_panel.png**</span>; multi-panel plot of predicted coyote occurrence given global model covariates   
 * <span style = "color: #7B0F17;">**re_predicted_probability.png**</span>; plot of predicted coyote occurrence per landscape unit (i.e., random effect), given an example covariate (NOTE: not used in manuscript, not in .Rmd or .pdf files)
 * <span style = "color: #7B0F17;">**simulated_parameters_panel.png**</span>; multi-panel plot of simulated beta coefficient values for global model covariates after 1,000 iterations
 * <span style = "color: #7B0F17;">**simulated_top_models**</span>; plot of best-performing simulated models after 1,000 iterations
-* <span style = "color: #7B0F17;">**study_area_map.png**</span>; map of landscape units and camera trap deployment locations in the oil sands region, with inset map of study area within Canada  
+* <span style = "color: #7B0F17;">**study_area_box.png**</span>; map of Canada with Alberta highlighted and a box around the study area
+* <span style = "color: #7B0F17;">**study_area.png**</span>; map of LUs and camera trap deployments
 * <span style = "color: #7B0F17;">**vif_plot.png**</span>; map of variance inflation factor values for global model covariates    
 
 <hr>
@@ -116,7 +119,7 @@ Many people were involved in the collection and processing of these camera trap 
 Camera trap deployment information for 2021-2023.
 
 * **Number of variables/columns:** 7
-*  **Number of observations/rows:** 237
+* **Number of observations/rows:** 237
 
 Variable list:
 
@@ -132,7 +135,7 @@ Variable list:
 Total independent detections of mammal species for 2022-2023.
 
 * **Number of variables/columns:** 40
-*  **Number of observations/rows:** 155
+* **Number of observations/rows:** 155
 
 Variable list:
 
@@ -146,7 +149,7 @@ Variable list:
 Proportional landcover and human footprint index information, binned into general categories. More information on the human footprint index - as well as links to download data - can be found [here](https://abmi.ca/abmi-home/data-resources/data-portal-main/data-portal.html?rootPath=/&itemPerPage=6).
 
 * **Number of variables/columns:** 19
-*  **Number of observations/rows:** 4,660
+* **Number of observations/rows:** 4,660
 
 Variable list:
 
@@ -174,7 +177,7 @@ Variable list:
 Monthly proportional detection data for mammal species of interest for all deployment years (2021-2022 and 2022-2023).
 
 * **Number of variables/columns:** 25
-*  **Number of observations/rows:** 232
+* **Number of observations/rows:** 232
 
 Variable list:
 
@@ -190,7 +193,7 @@ Variable list:
 Total independent detections of mammal species for 2021-2022.
 
 * **Number of variables/columns:** 36
-*  **Number of observations/rows:** 78
+* **Number of observations/rows:** 78
 
 Variable list:
 
@@ -207,7 +210,7 @@ Variable list:
 Merged, cleaned and formatted dataset for analyses. All landcover and human footprint index proportions are for a buffer radius of 4,750 m. Only landcover/human footprint indices and mammal species of interest are included.
 
 * **Number of variables/columns:** 20
-*  **Number of observations/rows:** 233
+* **Number of observations/rows:** 233
 
 This .csv contains combined variables from all raw files. Variable descriptions are the same as above, except:
 
@@ -221,7 +224,7 @@ This .csv contains combined variables from all raw files. Variable descriptions 
 Results from 1,000 simulation iterations of the global model and model selection.
 
 * **Number of variables/columns:** 4
-*  **Number of observations/rows:** 11,000
+* **Number of observations/rows:** 11,000
 
 * <span style = "color: #002747;">**simulation**</span>, simulation iteration (number between 1-1,000); numeric
 * <span style = "color: #002747;">**Parameter**</span>, name of simulated global model intercept and covariates, and NA associated with top model outcome; character   

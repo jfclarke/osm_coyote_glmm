@@ -25,6 +25,7 @@ library(MuMIn)
 library(car)
 library(readr)
 library(insight)
+library(grt)
 
 # set ggplot theme
 theme_set(theme_classic())
@@ -74,7 +75,285 @@ global <-
     data = coyote_data,
     family = binomial)
 
-# 3) calculate odds ratios --------------------------------------------------
+# 3) covariate distribution plots -------------------------------------------------
+
+nat_land_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = nat_land)) +
+  
+  geom_density(fill = 'darkseagreen',
+               color = 'darkseagreen') +
+  
+  geom_vline(xintercept = mean(coyote_data$nat_land),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('proportion natural land') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     limits = c(0.65, 1),
+                     breaks = seq(0.65, 1, by = 0.1)) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+wide_lf_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = wide_linear)) +
+  
+  geom_density(fill = 'darkseagreen',
+               color = 'darkseagreen') +
+  
+  geom_vline(xintercept = mean(coyote_data$wide_linear),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('proportion wide LFs') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+fisher_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = fisher)) +
+  
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
+  
+  geom_vline(xintercept = mean(coyote_data$fisher),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total fisher detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+lynx_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = lynx)) +
+  
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
+  
+  geom_vline(xintercept = mean(coyote_data$lynx),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total lynx detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+wolf_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = grey_wolf)) +
+  
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
+  
+  geom_vline(xintercept = mean(coyote_data$grey_wolf),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total wolf detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+squirrel_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = red_squirrel)) +
+  
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
+  
+  geom_vline(xintercept = mean(coyote_data$red_squirrel),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total squirrel detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+hare_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = snowshoe_hare)) +
+  
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
+  
+  geom_vline(xintercept = mean(coyote_data$snowshoe_hare),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total hare detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+deer_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = white_tailed_deer)) +
+  
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
+  
+  geom_vline(xintercept = mean(coyote_data$white_tailed_deer),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total deer detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+moose_dist <-
+  
+  ggplot(coyote_data,
+         aes(x = moose)) +
+  
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
+  
+  geom_vline(xintercept = mean(coyote_data$moose),
+             linetype = "dashed",
+             linewidth = 0.7,
+             alpha = 0.7) +
+  
+  xlab('total moose detections') +
+  
+  ylab(' ') +
+  
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
+  
+  scale_y_continuous(expand = c(0, 0)) +
+  
+  theme(axis.title.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 16),
+        axis.title.y.left = element_text(size = 35))
+
+# 4) covariate distribution plot panel -----------------------------------------
+
+dist_plot <-
+  
+  ggarrange(nat_land_dist,
+            wide_lf_dist,
+            fisher_dist,
+            lynx_dist,
+            wolf_dist,
+            squirrel_dist,
+            hare_dist,
+            deer_dist,
+            moose_dist,
+            font.label = list(size = 14),
+            ncol = 3,
+            nrow = 3) %>% 
+  
+  annotate_figure(left = text_grob('density',
+                                   rot = 90,
+                                   vjust = 0.5,
+                                   size = 22))
+
+# 5) export covariate distribution figure ---------------------------------
+
+ggsave('covariate_distribution_panel.png',
+       dist_plot,
+       path = 'figures',
+       width = 250,
+       height = 250,
+       units = 'mm',
+       bg = 'white')
+
+# 6) calculate odds ratios --------------------------------------------------
 
 # step 1:
 wide_lf_odds <-
@@ -161,15 +440,15 @@ odds_plot_1 <-
   # add line at 1
   geom_hline(yintercept = 1,
              alpha = 0.7,
-             linetype = 'dashed') +
+             linetype = 'dashed',
+             linewidth = 0.7) +
   
   # add points for estimates
   geom_point(size = 3) +
   
   # add confidence intervals
   geom_linerange(aes(ymin = lower,
-                     ymax = upper),
-                 linewidth = 0.5) +
+                     ymax = upper)) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
@@ -185,9 +464,9 @@ odds_plot_1 <-
   # specify theme elements
   theme(panel.grid = element_blank(),
         axis.title.y = element_blank(),
-        axis.text = element_text(size = 12),
+        axis.text = element_text(size = 14),
         legend.position = 'none',
-        axis.title.x = element_text(size = 14))
+        axis.title.x = element_text(size = 16))
 
 # step 2
 odds_plot_2 <-
@@ -223,7 +502,7 @@ odds_plot_2 <-
            xmax = 7.5,
            ymin = -Inf,
            ymax = Inf,
-           fill = 'lightsteelblue1',
+           fill = 'lightsteelblue',
            alpha = 0.4) +
   
   # add background for prey covariates
@@ -233,12 +512,13 @@ odds_plot_2 <-
            ymin = -Inf,
            ymax = Inf,
            fill = 'tomato',
-           alpha = 0.2) +
+           alpha = 0.15) +
   
   # add line at 1
   geom_hline(yintercept = 1,
              alpha = 0.7,
-             linetype = 'dashed') +
+             linetype = 'dashed',
+             linewidth = 0.7) +
   
   # add points for estimates
   geom_point(size = 3) +
@@ -262,9 +542,9 @@ odds_plot_2 <-
   # specify theme elements
   theme(panel.grid = element_blank(),
         axis.title.y = element_blank(),
-        axis.text = element_text(size = 12),
+        axis.text = element_text(size = 14),
         legend.position = 'none',
-        axis.title.x = element_text(size = 14))
+        axis.title.x = element_text(size = 16))
 
 # 5) export odds ratio plots -----------------------------------------------
 
@@ -376,7 +656,7 @@ plot_nat_land <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 
@@ -406,7 +686,7 @@ plot_wide_linear <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35))
 
@@ -422,7 +702,7 @@ plot_moose <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.2) +
+              alpha = 0.15) +
   
   scale_x_continuous(expand = c(0, 0),
                      labels = label_wrap(10)) +
@@ -436,7 +716,7 @@ plot_moose <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -458,7 +738,7 @@ plot_red_squirrel <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.2) +
+              alpha = 0.15) +
   
   scale_x_continuous(limits = c(0, 153),
                      breaks = seq(0, 150, by = 50),
@@ -474,7 +754,7 @@ plot_red_squirrel <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -496,7 +776,7 @@ plot_snowshoe_hare <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.2) +
+              alpha = 0.15) +
   
   scale_x_continuous(expand = c(0,0),
                      labels = label_wrap(10)) +
@@ -510,7 +790,7 @@ plot_snowshoe_hare <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -532,7 +812,7 @@ plot_white_tailed_deer <-
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
               fill = 'tomato',
-              alpha = 0.2) +
+              alpha = 0.15) +
   
   scale_x_continuous(limits = c(0, 130),
                      breaks = seq(0, 130, by = 30),
@@ -548,7 +828,7 @@ plot_white_tailed_deer <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -569,7 +849,7 @@ plot_fisher <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              fill = 'lightsteelblue1',
+              fill = 'lightsteelblue',
               alpha = 0.4) +
   
   scale_x_continuous(limits = c(0, 12.5),
@@ -586,7 +866,7 @@ plot_fisher <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -607,7 +887,7 @@ plot_grey_wolf <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              fill = 'lightsteelblue1',
+              fill = 'lightsteelblue',
               alpha = 0.4) +
   
   scale_x_continuous(limits = c(0, 13),
@@ -624,7 +904,7 @@ plot_grey_wolf <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -645,7 +925,7 @@ plot_lynx <-
   
   geom_ribbon(aes(ymin = conf.low,
                   ymax = conf.high),
-              fill = 'lightsteelblue1',
+              fill = 'lightsteelblue',
               alpha = 0.4) +
   
   scale_x_continuous(expand = c(0, 0),
@@ -660,7 +940,7 @@ plot_lynx <-
   ylab(' ') +
   
   theme(axis.title.y = element_blank(),
-        axis.text = element_text(size = 9),
+        axis.text = element_text(size = 12),
         axis.title.x = element_text(size = 16),
         axis.title.y.left = element_text(size = 35)) +
   
@@ -684,9 +964,6 @@ pp_plot <-
             plot_snowshoe_hare,
             plot_white_tailed_deer,
             plot_moose,
-            labels = 'auto',
-            label.x = 0.88,
-            font.label = list(size = 14),
             ncol = 3,
             nrow = 3) %>% 
   
@@ -756,8 +1033,13 @@ ggsave('re_predicted_probability.png',
 
 # 11) variance inflation factor ------------------------------------------
 
-# calculate variance inflation factors (VIFs)
-vif_model <-
+# calculate variance inflation factors (VIFs) for step 1
+vif_wide_lf <-
+  
+  vif(wide_lf)
+
+# calculate VIFs for step 2
+vif_global <-
   
   vif(global) %>% 
   
@@ -789,7 +1071,7 @@ vif_model <-
 # plot VIFs
 vif_plot <-
   
-  ggplot(data = vif_model %>% 
+  ggplot(data = vif_global %>% 
            
            # customize order of labels
            mutate(label = fct_relevel(label,
@@ -809,13 +1091,14 @@ vif_plot <-
   geom_col() +
   
   # set colour based on covariate type
-  scale_fill_manual(values = c('lightsteelblue1', 'darkseagreen', 'tomato'),
+  scale_fill_manual(values = c('lightsteelblue', 'darkseagreen', 'tomato'),
                      labels = c('land', 'comp', 'prey')) +
   
   # add line at 1
   geom_hline(yintercept = 1,
-             alpha = 0.5,
-             linetype = 'dashed') +
+             alpha = 0.7,
+             linetype = 'dashed',
+             linewidth = 0.7) +
   
   # reverse the order of labels on the x axis (ggplot annoyingly plots them in reverse order)
   scale_x_discrete(limits = rev) +
@@ -834,9 +1117,9 @@ vif_plot <-
   
   # specify theme elements
   theme(axis.title.y = element_blank(),
-        axis.text.y = element_text(size = 12),
+        axis.text.y = element_text(size = 14),
         legend.position = 'none',
-        axis.title.x = element_text(size = 14))
+        axis.title.x = element_text(size = 16))
 
 # save plot
 ggsave('vif_plot.png',
@@ -892,7 +1175,7 @@ deploy <-
          array = as.factor(array)) %>% 
   
   # remove columns we don't need
-  select(!c(camera_failure_details,
+  dplyr::select(!c(camera_failure_details,
             deployment_id)) %>% 
   
   # remove ABMI sites
@@ -952,12 +1235,11 @@ ct_op_plot <-
   
   ylab('camera trap site') +
   
-  theme_classic() +
-  
   theme(axis.text = element_text(size = 14),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         axis.title = element_text(size = 16),
+        axis.title.y = element_text(vjust = +2),
         legend.text = element_text(size = 16),
         legend.title = element_blank())
 
@@ -969,7 +1251,77 @@ ggsave('ct_op.png',
        height = 150,
        units = 'mm')
 
-# 13) simulation results --------------------------------------------------
+# 13) naive occupancy plot ------------------------------------------------
+
+# arrange dataframe for plotting
+naive_occ <-
+  
+  coyote_data %>% 
+  
+  dplyr::select(array, coyote_pres, coyote_abs) %>% 
+  
+  # to correct order of arrays in plot: make a new column with just LU number...
+  mutate(array = dplyr::recode(array,
+                               LU01 = 'LU1'),
+         array = as.factor(array),
+         lu = str_remove(array,
+                         pattern = 'LU'),
+         lu = as.numeric(lu)) %>% 
+  
+  # arrange smallest to largest...
+  arrange(lu) %>% 
+  
+  # make another column with unique ascending values
+  # reorder according to values
+  mutate(value = 1:233,
+         order = fct_reorder(array,
+                             value)) %>% 
+  
+  # make a column for total months camera was active and naive occupancy
+  mutate(active = (coyote_pres + coyote_abs),
+         occ = (coyote_pres / active))
+
+# plot naive occupancy
+naive_occ_plot <- 
+  
+  ggplot(naive_occ %>% 
+           
+           mutate(array = fct_relevel(array,
+                                      'LU1',
+                                      'LU2',
+                                      'LU3',
+                                      'LU13',
+                                      'LU15',
+                                      'LU21')),
+         aes(x = reorder(array, value),
+             y = occ,
+             fill = array,
+             color = array))+
+  
+  geom_violin() +
+  
+  scale_fill_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77')) +
+  
+  scale_color_manual(values = c('#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77')) +
+  
+  xlab('array') +
+  
+  ylab('naive monthly occupancy') +
+  
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        axis.title.y = element_text(vjust = +2),
+        legend.position = 'none')
+
+# save plot
+ggsave('naive_occupancy.png',
+       naive_occ_plot,
+       path = 'figures',
+       width = 150,
+       height = 150,
+       units = 'mm')
+
+# 14) simulation results --------------------------------------------------
 
 # A) density plots of simulated model parameters
 
@@ -1028,15 +1380,18 @@ moose_truth <-
 d_nat_land <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_nat_land"),
+           filter(Parameter == 'sim_nat_land'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  geom_density(fill = 'darkseagreen',
+               color = 'darkseagreen') +
   
-  geom_vline(xintercept = nat_land_truth, linetype = "dashed") +
+  geom_vline(xintercept = nat_land_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1047,22 +1402,26 @@ d_nat_land <-
   
   ggtitle('natural land') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_wide_lf <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_wide_lf"),
+           filter(Parameter == 'sim_wide_lf'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "darkseagreen", alpha = 0.4) +
+  geom_density(fill = 'darkseagreen',
+               color = 'darkseagreen') +
   
-  geom_vline(xintercept = wide_linear_truth, linetype = "dashed") +
+  geom_vline(xintercept = wide_linear_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1071,24 +1430,28 @@ d_wide_lf <-
   
   ylab(' ') +
   
-  ggtitle('wide LF') +
+  ggtitle('wide LFs') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_fisher <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_fisher"),
+           filter(Parameter == 'sim_fisher'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
   
-  geom_vline(xintercept = fisher_truth, linetype = "dashed") +
+  geom_vline(xintercept = fisher_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1099,22 +1462,26 @@ d_fisher <-
   
   ggtitle('fisher') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_lynx <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_lynx"),
+           filter(Parameter == 'sim_lynx'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
   
-  geom_vline(xintercept = lynx_truth, linetype = "dashed") +
+  geom_vline(xintercept = lynx_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             aplha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1125,22 +1492,26 @@ d_lynx <-
   
   ggtitle('lynx') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_wolf <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_wolf"),
+           filter(Parameter == 'sim_wolf'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "lightsteelblue1", alpha = 0.4) +
+  geom_density(fill = 'lightsteelblue',
+               color = 'lightsteelblue') +
   
-  geom_vline(xintercept = grey_wolf_truth, linetype = "dashed") +
+  geom_vline(xintercept = grey_wolf_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alhpa = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1151,22 +1522,26 @@ d_wolf <-
   
   ggtitle('wolf') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_squirrel <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_squirrel"),
+           filter(Parameter == 'sim_squirrel'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "tomato", alpha = 0.4) +
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
   
-  geom_vline(xintercept = red_squirrel_truth, linetype = "dashed") +
+  geom_vline(xintercept = red_squirrel_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1177,22 +1552,26 @@ d_squirrel <-
   
   ggtitle('squirrel') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_hare <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_hare"),
+           filter(Parameter == 'sim_hare'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "tomato", alpha = 0.4) +
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
   
-  geom_vline(xintercept = snowshoe_hare_truth, linetype = "dashed") +
+  geom_vline(xintercept = snowshoe_hare_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1203,22 +1582,26 @@ d_hare <-
   
   ggtitle('hare') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_wtd <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_wtd"),
+           filter(Parameter == 'sim_wtd'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "tomato", alpha = 0.4) +
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
   
-  geom_vline(xintercept = white_tailed_deer_truth, linetype = "dashed") +
+  geom_vline(xintercept = white_tailed_deer_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(breaks = breaks_pretty(),
                      expand = c(0, 0)) +
   
   scale_y_continuous(expand = c(0, 0)) +
@@ -1229,25 +1612,31 @@ d_wtd <-
   
   ggtitle('deer') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 d_moose <- 
   
   ggplot(sim_results %>%
-           filter(Parameter == "sim_moose"),
+           filter(Parameter == 'sim_moose'),
          aes(x = Estimate)) +
   
-  geom_density(fill = "tomato", alpha = 0.4) +
+  geom_density(fill = 'tomato',
+               color = 'tomato') +
   
-  geom_vline(xintercept = moose_truth, linetype = "dashed") +
+  geom_vline(xintercept = moose_truth,
+             linetype = 'dashed',
+             linewidth = 0.7,
+             alpha = 0.7) +
   
-  scale_x_continuous(breaks = waiver(),
-                     n.breaks = 3,
+  scale_x_continuous(limits = c(-0.129, 0.00251),
+                     breaks = seq(-0.12, 0.00251, by = 0.05),
                      expand = c(0, 0)) +
   
-  scale_y_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),
+                     breaks = breaks_pretty()) +
   
   xlab(' ') +
   
@@ -1255,9 +1644,10 @@ d_moose <-
   
   ggtitle('moose') +
   
-  theme(axis.text = element_text(size = 11),
+  theme(axis.text = element_text(size = 14),
         plot.title = element_text(hjust = 0.5,
-                                  size = 14))
+                                  size = 16,
+                                  face = 'bold'))
 
 # arrange density plots into a single panel
 d_plot <-
@@ -1285,6 +1675,7 @@ d_plot <-
   annotate_figure(bottom = text_grob('beta coefficient estimate',
                                      hjust = 0.5,
                                      size = 20))
+
 # save panel plot
 ggsave('simulated_parameters_panel.png',
        d_plot,
@@ -1324,7 +1715,7 @@ ggsave('simulated_top_models.png',
        units = 'mm',
        bg = 'white')
 
-# 13) mapping set-up ----------------------------------------------------------
+# 14) mapping set-up ----------------------------------------------------------
 
 # A) read in LU polygons where CTs were deployed
 
@@ -1430,9 +1821,9 @@ cities <-
   
   filter(name == 'Fort McMurray')
 
-# 14) map of study area -------
+# 15) map of study area -------
 
-### first: extend bounding box so map features (e.g., scale bar) don't overlap with map itself
+# first: extend bounding box so map features (e.g., scale bar) don't overlap with map itself
 bbox1 <-  st_bbox(ne_ab_bbox)
 
 xrange <- bbox1$xmax - bbox1$xmin
@@ -1442,10 +1833,10 @@ bbox1[1] <- bbox1[1] - (0.4 * xrange) # xmin - left
 bbox1 <- bbox1 %>%
   st_as_sfc() # make bounding box an sf polygon
 
-### then: set tmap mode to 'plot'
+# then: set tmap mode to 'plot'
 tmap_mode('plot')
 
-### then: map LUs and CT deployments in NE Alberta
+# then: map LUs and CT deployments in NE Alberta
 lus_cts <-
   
   # this establishes the spatial extent of the map
@@ -1495,14 +1886,14 @@ lus_cts <-
   # layer roads and cities on top
   tm_shape(roads) +
   tm_lines(col = 'grey40',
-           lwd = 0.5) +
+           lwd = 1) +
   
   tm_shape(cities) + 
   tm_dots(col = 'black',
-          size = 0.3) +
+          size = 1) +
   tm_text('name',
-          size = 1.1,
-          just = c(-0.11,-0.11),
+          size = 1.8,
+          just = c(-0.08,-0.08),
           fontface = 'bold') +
   
   # add points for CT deployment locations in LU1
@@ -1510,63 +1901,78 @@ lus_cts <-
              crop_shape(lus %>% 
                           filter(namerefere == 'LU1'))) +
   tm_dots(col = '#005AB5',
-          size = 0.07) +
+          size = 0.2) +
   
   # add points for CT deployment locations in LU2
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU2'))) +
   tm_dots(col = '#DC3220',
-          size = 0.07) +
+          size = 0.2) +
   
   # add points for CT deployment locations in LU3
   tm_shape(cts_2021 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU3'))) +
   tm_dots(col = '#DC3220',
-          size = 0.07) +
+          size = 0.2) +
   
   # add points for CT deployment locations in LU13
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU13'))) +
   tm_dots(col = '#005AB5',
-          size = 0.07) +
+          size = 0.2) +
   
   # add points for CT deployment locations in LU15
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU15'))) +
   tm_dots(col = '#005AB5',
-          size = 0.07) +
+          size = 0.2) +
   
   # add points for CT deployment locations in LU21
   tm_shape(cts_2022 %>% 
              crop_shape(lus %>% 
                           filter(namerefere == 'LU21'))) +
   tm_dots(col = '#005AB5',
-          size = 0.07) +
+          size = 0.2) +
   
   tm_shape(lus) +
   tm_text('namerefere',
-                    size = 0.9,
-                    just = c(1.7, -2.5)) +
+          size = 1.5,
+          just = c(1.8, -2.15),
+          fontface = 'bold') +
   
   # add scale bar
-  tm_scale_bar(position = c('left', 'BOTTOM'),
-               text.size = 0.8,
-               width = 0.2) +
+  tm_scale_bar(position = c('center', 'BOTTOM'),
+               text.size = 1.2,
+               width = 0.3) +
+  
+  # add north arrow
+  tm_compass(type = 'arrow',
+             position = c(0.01, 0.88),
+             show.labels = 0,
+             size = 5) +
   
   # specify layout elements
   tm_layout(frame = FALSE,
             bg.color = 'transparent')
 
-### next: set NE Alberta bbox as an sf object
+# save map
+tmap_save(lus_cts,
+          'figures/study_area.png',
+          width = 200,
+          height = 250,
+          units = 'mm',
+          bg = 'transparent')
+
+# next: set NE Alberta bbox as an sf object
 ne_ab_bbox <- 
   ne_ab_bbox %>% 
   st_as_sfc()
 
-### then: overlay map of Alberta within Canada, with box around NE Alberta
+# then: overlay map of Alberta within Canada, with box around NE Alberta
 ne_ab_can <-
   tm_shape(provs) +
   tm_fill(col = 'grey20') +
@@ -1576,9 +1982,20 @@ ne_ab_can <-
   
   tm_shape(ne_ab_bbox) +
   tm_borders(col = 'black',
-             lwd = 0.75) +
+             lwd = 5) +
   
-  tm_layout(frame.lwd = 2)
+  tm_layout(frame = FALSE,
+            bg.color = 'transparent')
+
+# save map
+tmap_save(ne_ab_can,
+          'figures/study_area_box.png',
+          width = 250,
+          height = 200,
+          units = 'mm',
+          bg = 'transparent')
+
+# FROM HERE DOWN - ARCHIVED (FOR REFERENCE/INTEREST ONLY) -------------------------
 
 ### next: overlay maps
 
@@ -1592,9 +2009,9 @@ inset_map <-
   ggdraw(lus_cts_grob) + # add first layer = study area map
   draw_plot(ne_ab_can_grob, # inset map of Canada and specify position
             x = 0.13,
-            y = 0.69,
-            width = 0.27,
-            height = 0.27) +
+            y = 0.13,
+            width = 0.35,
+            height = 0.35) +
   theme(panel.background =
           element_rect(
             fill = 'transparent'),
@@ -1603,8 +2020,7 @@ inset_map <-
             colour = NA,
             fill = NA))
 
-# 15) export study area map with inset ---------------------------------------------------------------------
-
+# export study area map with inset
 ggsave('study_area_map.png',
        inset_map,
        path = 'figures',
